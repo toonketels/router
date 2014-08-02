@@ -1,8 +1,9 @@
 package router
 
 import (
-	// "fmt"
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"regexp"
 	"testing"
@@ -412,6 +413,44 @@ func TestDelete(t *testing.T) {
 	if requestHandler := router.routes["DELETE"][1]; len(router.routes["DELETE"]) != 2 ||
 		requestHandler.Path != "/hello/world" {
 		t.Error("Expected a second request handler to be registered")
+	}
+}
+
+// End-to-end ish
+// --------------------------------
+
+// This test is going to be more end-to-end ish
+func TestServeHTTP(t *testing.T) {
+	router := NewRouter()
+
+	indexHandler := func(w http.ResponseWriter, req *http.Request) {
+		w.Write([]byte("index"))
+	}
+
+	listHandler := func(w http.ResponseWriter, req *http.Request) {
+		w.Write([]byte("list"))
+	}
+
+	router.Get("/", indexHandler)
+	router.Get("/list", listHandler)
+
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	res, _ := http.Get(server.URL)
+	body, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	if string(body) != "index" {
+		t.Error("Expected index as response but got ", string(body))
+	}
+
+	res, _ = http.Get(server.URL + "/list")
+	body, _ = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	if string(body) != "list" {
+		t.Error("Expected index as response but got ", string(body))
 	}
 }
 
