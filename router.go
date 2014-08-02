@@ -30,21 +30,13 @@ type RequestHandler struct {
 // A Router to register paths and requesthandlers to.
 // There should be only one per application.
 type Router struct {
-	routes       map[string][]*RequestHandler
-	getRoutes    map[string]http.HandlerFunc
-	postRoutes   map[string]http.HandlerFunc
-	putRoutes    map[string]http.HandlerFunc
-	deleteRoutes map[string]http.HandlerFunc
+	routes map[string][]*RequestHandler
 }
 
 // NewRouter creates a router, starts handling those routes and
 // returns a pointer to it.
 func NewRouter() (router *Router) {
 	router = new(Router)
-	router.getRoutes = make(map[string]http.HandlerFunc)
-	router.postRoutes = make(map[string]http.HandlerFunc)
-	router.putRoutes = make(map[string]http.HandlerFunc)
-	router.deleteRoutes = make(map[string]http.HandlerFunc)
 
 	router.routes = map[string][]*RequestHandler{
 		"GET":    make([]*RequestHandler, 0),
