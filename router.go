@@ -56,7 +56,15 @@ func NewRouter() (router *Router) {
 
 	params = make(map[*http.Request]map[string]string)
 
-	http.Handle("/", router)
+	// We cannot instantiate multipe routers as they all will
+	// try to handle "/" which panics the system.
+	//
+	// This is especially an issue in testing.
+	//
+	// Let people handle it manually for now until
+	// we have a better solution.
+	// @TODO: fix this
+	// http.Handle("/", router)
 	return
 }
 
@@ -67,22 +75,22 @@ func Params(req *http.Request) (reqParams map[string]string, ok bool) {
 
 // Register a GET path to be handled.
 func (router *Router) Get(path string, handler http.HandlerFunc) {
-	router.getRoutes[path] = handler
+	router.registerRequestHandler("GET", path, handler)
 }
 
 // Register a POST path to be handled.
 func (router *Router) Post(path string, handler http.HandlerFunc) {
-	router.postRoutes[path] = handler
+	router.registerRequestHandler("POST", path, handler)
 }
 
 // Register a PUT path to be handled.
 func (router *Router) Put(path string, handler http.HandlerFunc) {
-	router.putRoutes[path] = handler
+	router.registerRequestHandler("PUT", path, handler)
 }
 
 // Register a DELETE path to be handled.
 func (router *Router) Delete(path string, handler http.HandlerFunc) {
-	router.deleteRoutes[path] = handler
+	router.registerRequestHandler("DELETE", path, handler)
 }
 
 // Private API to start handling the registered routes.

@@ -303,6 +303,121 @@ func TestRegisterRequestHandler(t *testing.T) {
 	}
 }
 
+func TestGet(t *testing.T) {
+	router := NewRouter()
+
+	// Should not have ony get handlers
+	// There should be no handlers registered
+	if len(router.routes["GET"]) > 0 {
+		t.Error("No GET handlers should be registered yet")
+	}
+
+	handler := func(w http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.Get("/hello", handler)
+
+	if requestHandler := router.routes["GET"][0]; len(router.routes["GET"]) != 1 ||
+		requestHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.Get("/hello/world", handler)
+
+	if requestHandler := router.routes["GET"][1]; len(router.routes["GET"]) != 2 ||
+		requestHandler.Path != "/hello/world" {
+		t.Error("Expected a second request handler to be registered")
+	}
+}
+
+func TestPost(t *testing.T) {
+	router := NewRouter()
+
+	// Should not have ony get handlers
+	// There should be no handlers registered
+	if len(router.routes["POST"]) > 0 {
+		t.Error("No POST handlers should be registered yet")
+	}
+
+	handler := func(w http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.Post("/hello", handler)
+
+	if requestHandler := router.routes["POST"][0]; len(router.routes["POST"]) != 1 ||
+		requestHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.Post("/hello/world", handler)
+
+	if requestHandler := router.routes["POST"][1]; len(router.routes["POST"]) != 2 ||
+		requestHandler.Path != "/hello/world" {
+		t.Error("Expected a second request handler to be registered")
+	}
+}
+
+func TestPut(t *testing.T) {
+	router := NewRouter()
+
+	// Should not have ony get handlers
+	// There should be no handlers registered
+	if len(router.routes["PUT"]) > 0 {
+		t.Error("No PUT handlers should be registered yet")
+	}
+
+	handler := func(w http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.Put("/hello", handler)
+
+	if requestHandler := router.routes["PUT"][0]; len(router.routes["PUT"]) != 1 ||
+		requestHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.Put("/hello/world", handler)
+
+	if requestHandler := router.routes["PUT"][1]; len(router.routes["PUT"]) != 2 ||
+		requestHandler.Path != "/hello/world" {
+		t.Error("Expected a second request handler to be registered")
+	}
+}
+
+func TestDelete(t *testing.T) {
+	router := NewRouter()
+
+	// Should not have ony get handlers
+	// There should be no handlers registered
+	if len(router.routes["DELETE"]) > 0 {
+		t.Error("No DELETE handlers should be registered yet")
+	}
+
+	handler := func(w http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.Delete("/hello", handler)
+
+	if requestHandler := router.routes["DELETE"][0]; len(router.routes["DELETE"]) != 1 ||
+		requestHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.Delete("/hello/world", handler)
+
+	if requestHandler := router.routes["DELETE"][1]; len(router.routes["DELETE"]) != 2 ||
+		requestHandler.Path != "/hello/world" {
+		t.Error("Expected a second request handler to be registered")
+	}
+}
+
+// Helpers....
+// ---------------------------------
+
 func isRequestHandlerDeepEqual(first *RequestHandler, second *RequestHandler) bool {
 	if first.Path != second.Path ||
 		!reflect.DeepEqual(first.ParamNames, second.ParamNames) ||
