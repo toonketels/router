@@ -12,7 +12,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -95,44 +94,12 @@ func (router *Router) Delete(path string, handler http.HandlerFunc) {
 
 // Private API to start handling the registered routes.
 func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.Method, req.URL)
-
-	if req.Method == "GET" {
-		if handle, ok := router.getRoutes[req.URL.Path]; ok {
-			// params[req] = map[string]string{
-			// 	"userid": "34",
-			// }
-			params[req] = FindParams(req.URL.Path)
-			handle(res, req)
-			fmt.Println("utils params", params)
-			delete(params, req)
+	for _, requestHandler := range router.routes[req.Method] {
+		if requestHandler.Matches(req.URL.Path) {
+			requestHandler.Handler(res, req)
+			break
 		}
-
-		res.Write([]byte("You issued a GET request"))
 	}
-
-	if req.Method == "POST" {
-		if handle, ok := router.postRoutes[req.URL.Path]; ok {
-			handle(res, req)
-		}
-		res.Write([]byte("You issued a POST request"))
-	}
-
-	if req.Method == "PUT" {
-		if handle, ok := router.putRoutes[req.URL.Path]; ok {
-			handle(res, req)
-		}
-		res.Write([]byte("You issued a PUT request"))
-	}
-
-	if req.Method == "DELETE" {
-		if handle, ok := router.deleteRoutes[req.URL.Path]; ok {
-			handle(res, req)
-		}
-		res.Write([]byte("You issued a DELETE request"))
-	}
-
-	res.Write([]byte("Yes we did it"))
 }
 
 func FindParams(path string) map[string]string {
