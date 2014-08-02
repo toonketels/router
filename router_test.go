@@ -1,6 +1,7 @@
 package router
 
 import (
+	// "fmt"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -269,6 +270,36 @@ func TestMatches(t *testing.T) {
 		if isMatch != test.expected {
 			t.Error("Expected ", test.expected, " got ", isMatch, " for path ", test.path)
 		}
+	}
+}
+
+func TestRegisterRequestHandler(t *testing.T) {
+	router := NewRouter()
+
+	// There should be no handlers registered
+	if len(router.routes["GET"]) > 0 ||
+		len(router.routes["POST"]) > 0 ||
+		len(router.routes["PUT"]) > 0 ||
+		len(router.routes["DELETE"]) > 0 {
+		t.Error("No handlers should be registered yet")
+	}
+
+	handler := func(w http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.registerRequestHandler("GET", "/hello", handler)
+
+	if requestHandler := router.routes["GET"][0]; len(router.routes["GET"]) != 1 ||
+		requestHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.registerRequestHandler("GET", "/hello/world", handler)
+
+	if requestHandler := router.routes["GET"][1]; len(router.routes["GET"]) != 2 ||
+		requestHandler.Path != "/hello/world" {
+		t.Error("Expected a first request handler to be registered")
 	}
 }
 

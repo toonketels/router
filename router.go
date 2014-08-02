@@ -31,6 +31,7 @@ type RequestHandler struct {
 // A Router to register paths and requesthandlers to.
 // There should be only one per application.
 type Router struct {
+	routes       map[string][]*RequestHandler
 	getRoutes    map[string]http.HandlerFunc
 	postRoutes   map[string]http.HandlerFunc
 	putRoutes    map[string]http.HandlerFunc
@@ -45,6 +46,13 @@ func NewRouter() (router *Router) {
 	router.postRoutes = make(map[string]http.HandlerFunc)
 	router.putRoutes = make(map[string]http.HandlerFunc)
 	router.deleteRoutes = make(map[string]http.HandlerFunc)
+
+	router.routes = map[string][]*RequestHandler{
+		"GET":    make([]*RequestHandler, 0),
+		"POST":   make([]*RequestHandler, 0),
+		"PUT":    make([]*RequestHandler, 0),
+		"DELETE": make([]*RequestHandler, 0),
+	}
 
 	params = make(map[*http.Request]map[string]string)
 
@@ -162,6 +170,11 @@ func createRegexp(path string) (string, []string) {
 
 func isTokenized(path string) bool {
 	return strings.Contains(path, ":")
+}
+
+func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
+	requestHandler := makeRequestHandler(path, handler)
+	router.routes[method] = append(router.routes[method], requestHandler)
 }
 
 // Creates the RequestHandler struct from the given path
