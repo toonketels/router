@@ -66,22 +66,22 @@ func Params(req *http.Request) (reqParams map[string]string, ok bool) {
 
 // Register a GET path to be handled.
 func (router *Router) Get(path string, handler http.HandlerFunc) {
-	router.registerrequestHandler("GET", path, handler)
+	router.registerRequestHandler("GET", path, handler)
 }
 
 // Register a POST path to be handled.
 func (router *Router) Post(path string, handler http.HandlerFunc) {
-	router.registerrequestHandler("POST", path, handler)
+	router.registerRequestHandler("POST", path, handler)
 }
 
 // Register a PUT path to be handled.
 func (router *Router) Put(path string, handler http.HandlerFunc) {
-	router.registerrequestHandler("PUT", path, handler)
+	router.registerRequestHandler("PUT", path, handler)
 }
 
 // Register a DELETE path to be handled.
 func (router *Router) Delete(path string, handler http.HandlerFunc) {
-	router.registerrequestHandler("DELETE", path, handler)
+	router.registerRequestHandler("DELETE", path, handler)
 }
 
 // Private API to start handling the registered routes.
@@ -122,13 +122,13 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 	return
 }
 
-func (router *Router) registerrequestHandler(method string, path string, handler http.HandlerFunc) {
-	reqHandler := makerequestHandler(path, handler)
+func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
+	reqHandler := makeRequestHandler(path, handler)
 	router.routes[method] = append(router.routes[method], reqHandler)
 }
 
 // Creates the requestHandler struct from the given path
-func makerequestHandler(path string, handler http.HandlerFunc) (reqHandler *requestHandler) {
+func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requestHandler) {
 	regexpPath, withParamNames := buildRegexpFor(path)
 
 	reqHandler = &requestHandler{

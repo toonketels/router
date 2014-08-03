@@ -40,7 +40,7 @@ func TestBuildRegexpFor(t *testing.T) {
 	}
 }
 
-func TestMakerequestHandler(t *testing.T) {
+func TestMakeRequestHandler(t *testing.T) {
 
 	type testPair struct {
 		input    string
@@ -98,8 +98,8 @@ func TestMakerequestHandler(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		reqHandler := makerequestHandler(test.input, handleFunc)
-		if !isrequestHandlerDeepEqual(&test.expected, reqHandler) {
+		reqHandler := makeRequestHandler(test.input, handleFunc)
+		if !isRequestHandlerDeepEqual(&test.expected, reqHandler) {
 			t.Error("Expected ", test.expected, " got ", reqHandler)
 		}
 	}
@@ -114,7 +114,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	handler := func(w http.ResponseWriter, req *http.Request) {}
-	reqHandler := makerequestHandler("/hello", handler)
+	reqHandler := makeRequestHandler("/hello", handler)
 
 	testPairs := []testPair{
 		{"/hello", true, make(map[string]string)},
@@ -135,7 +135,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Second...
-	reqHandler = makerequestHandler("/hello/world", handler)
+	reqHandler = makeRequestHandler("/hello/world", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -157,7 +157,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Third...
-	reqHandler = makerequestHandler("/hello/:world", handler)
+	reqHandler = makeRequestHandler("/hello/:world", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -180,7 +180,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Fourth...
-	reqHandler = makerequestHandler("/hello/:world/and/:goodmorning", handler)
+	reqHandler = makeRequestHandler("/hello/:world/and/:goodmorning", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -204,7 +204,7 @@ func TestMatches(t *testing.T) {
 	}
 }
 
-func TestRegisterrequestHandler(t *testing.T) {
+func TestRegisterRequestHandler(t *testing.T) {
 	router := NewRouter()
 
 	// There should be no handlers registered
@@ -218,7 +218,7 @@ func TestRegisterrequestHandler(t *testing.T) {
 	handler := func(w http.ResponseWriter, req *http.Request) {}
 
 	// Add one
-	router.registerrequestHandler("GET", "/hello", handler)
+	router.registerRequestHandler("GET", "/hello", handler)
 
 	if reqHandler := router.routes["GET"][0]; len(router.routes["GET"]) != 1 ||
 		reqHandler.Path != "/hello" {
@@ -226,7 +226,7 @@ func TestRegisterrequestHandler(t *testing.T) {
 	}
 
 	// Add one more
-	router.registerrequestHandler("GET", "/hello/world", handler)
+	router.registerRequestHandler("GET", "/hello/world", handler)
 
 	if reqHandler := router.routes["GET"][1]; len(router.routes["GET"]) != 2 ||
 		reqHandler.Path != "/hello/world" {
@@ -417,7 +417,7 @@ func TestServeHTTP(t *testing.T) {
 // Helpers....
 // ---------------------------------
 
-func isrequestHandlerDeepEqual(first *requestHandler, second *requestHandler) bool {
+func isRequestHandlerDeepEqual(first *requestHandler, second *requestHandler) bool {
 	if first.Path != second.Path ||
 		!reflect.DeepEqual(first.ParamNames, second.ParamNames) ||
 		!reflect.DeepEqual(first.Regex, second.Regex) ||
