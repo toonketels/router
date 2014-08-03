@@ -40,18 +40,18 @@ func TestBuildRegexpFor(t *testing.T) {
 	}
 }
 
-func TestMakeRequestHandler(t *testing.T) {
+func TestMakerequestHandler(t *testing.T) {
 
 	type testPair struct {
 		input    string
-		expected RequestHandler
+		expected requestHandler
 	}
 
 	handleFunc := func(w http.ResponseWriter, req *http.Request) {}
 
 	testPairs := []testPair{
 		{input: "/hello",
-			expected: RequestHandler{
+			expected: requestHandler{
 				Path:       "/hello",
 				ParamNames: make([]string, 0),
 				Regex:      regexp.MustCompile(`^\/hello$`),
@@ -60,7 +60,7 @@ func TestMakeRequestHandler(t *testing.T) {
 			},
 		},
 		{input: "/hello/world",
-			expected: RequestHandler{
+			expected: requestHandler{
 				Path:       "/hello/world",
 				ParamNames: make([]string, 0),
 				Regex:      regexp.MustCompile(`^\/hello\/world$`),
@@ -69,7 +69,7 @@ func TestMakeRequestHandler(t *testing.T) {
 			},
 		},
 		{input: "/hello/:world",
-			expected: RequestHandler{
+			expected: requestHandler{
 				Path:       "/hello/:world",
 				ParamNames: []string{"world"},
 				Regex:      regexp.MustCompile(`^\/hello\/([^\/]+)$`),
@@ -78,7 +78,7 @@ func TestMakeRequestHandler(t *testing.T) {
 			},
 		},
 		{input: "/hello/and/goodmorning",
-			expected: RequestHandler{
+			expected: requestHandler{
 				Path:       "/hello/and/goodmorning",
 				ParamNames: make([]string, 0),
 				Regex:      regexp.MustCompile(`^\/hello\/and\/goodmorning$`),
@@ -87,7 +87,7 @@ func TestMakeRequestHandler(t *testing.T) {
 			},
 		},
 		{input: "/hello/:and/good/:morning",
-			expected: RequestHandler{
+			expected: requestHandler{
 				Path:       "/hello/:and/good/:morning",
 				ParamNames: []string{"and", "morning"},
 				Regex:      regexp.MustCompile(`^\/hello\/([^\/]+)\/good\/([^\/]+)$`),
@@ -98,9 +98,9 @@ func TestMakeRequestHandler(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		requestHandler := makeRequestHandler(test.input, handleFunc)
-		if !isRequestHandlerDeepEqual(&test.expected, requestHandler) {
-			t.Error("Expected ", test.expected, " got ", requestHandler)
+		reqHandler := makerequestHandler(test.input, handleFunc)
+		if !isrequestHandlerDeepEqual(&test.expected, reqHandler) {
+			t.Error("Expected ", test.expected, " got ", reqHandler)
 		}
 	}
 }
@@ -114,7 +114,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	handler := func(w http.ResponseWriter, req *http.Request) {}
-	requestHandler := makeRequestHandler("/hello", handler)
+	reqHandler := makerequestHandler("/hello", handler)
 
 	testPairs := []testPair{
 		{"/hello", true, make(map[string]string)},
@@ -125,7 +125,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := requestHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.Matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
@@ -135,7 +135,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Second...
-	requestHandler = makeRequestHandler("/hello/world", handler)
+	reqHandler = makerequestHandler("/hello/world", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -147,7 +147,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := requestHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.Matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
@@ -157,7 +157,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Third...
-	requestHandler = makeRequestHandler("/hello/:world", handler)
+	reqHandler = makerequestHandler("/hello/:world", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -170,7 +170,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := requestHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.Matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
@@ -180,7 +180,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Fourth...
-	requestHandler = makeRequestHandler("/hello/:world/and/:goodmorning", handler)
+	reqHandler = makerequestHandler("/hello/:world/and/:goodmorning", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -194,7 +194,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := requestHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.Matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
@@ -204,7 +204,7 @@ func TestMatches(t *testing.T) {
 	}
 }
 
-func TestRegisterRequestHandler(t *testing.T) {
+func TestRegisterrequestHandler(t *testing.T) {
 	router := NewRouter()
 
 	// There should be no handlers registered
@@ -218,18 +218,18 @@ func TestRegisterRequestHandler(t *testing.T) {
 	handler := func(w http.ResponseWriter, req *http.Request) {}
 
 	// Add one
-	router.registerRequestHandler("GET", "/hello", handler)
+	router.registerrequestHandler("GET", "/hello", handler)
 
-	if requestHandler := router.routes["GET"][0]; len(router.routes["GET"]) != 1 ||
-		requestHandler.Path != "/hello" {
+	if reqHandler := router.routes["GET"][0]; len(router.routes["GET"]) != 1 ||
+		reqHandler.Path != "/hello" {
 		t.Error("Expected a first request handler to be registered")
 	}
 
 	// Add one more
-	router.registerRequestHandler("GET", "/hello/world", handler)
+	router.registerrequestHandler("GET", "/hello/world", handler)
 
-	if requestHandler := router.routes["GET"][1]; len(router.routes["GET"]) != 2 ||
-		requestHandler.Path != "/hello/world" {
+	if reqHandler := router.routes["GET"][1]; len(router.routes["GET"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
 		t.Error("Expected a first request handler to be registered")
 	}
 }
@@ -248,16 +248,16 @@ func TestGet(t *testing.T) {
 	// Add one
 	router.Get("/hello", handler)
 
-	if requestHandler := router.routes["GET"][0]; len(router.routes["GET"]) != 1 ||
-		requestHandler.Path != "/hello" {
+	if reqHandler := router.routes["GET"][0]; len(router.routes["GET"]) != 1 ||
+		reqHandler.Path != "/hello" {
 		t.Error("Expected a first request handler to be registered")
 	}
 
 	// Add one more
 	router.Get("/hello/world", handler)
 
-	if requestHandler := router.routes["GET"][1]; len(router.routes["GET"]) != 2 ||
-		requestHandler.Path != "/hello/world" {
+	if reqHandler := router.routes["GET"][1]; len(router.routes["GET"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
 		t.Error("Expected a second request handler to be registered")
 	}
 }
@@ -276,16 +276,16 @@ func TestPost(t *testing.T) {
 	// Add one
 	router.Post("/hello", handler)
 
-	if requestHandler := router.routes["POST"][0]; len(router.routes["POST"]) != 1 ||
-		requestHandler.Path != "/hello" {
+	if reqHandler := router.routes["POST"][0]; len(router.routes["POST"]) != 1 ||
+		reqHandler.Path != "/hello" {
 		t.Error("Expected a first request handler to be registered")
 	}
 
 	// Add one more
 	router.Post("/hello/world", handler)
 
-	if requestHandler := router.routes["POST"][1]; len(router.routes["POST"]) != 2 ||
-		requestHandler.Path != "/hello/world" {
+	if reqHandler := router.routes["POST"][1]; len(router.routes["POST"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
 		t.Error("Expected a second request handler to be registered")
 	}
 }
@@ -304,16 +304,16 @@ func TestPut(t *testing.T) {
 	// Add one
 	router.Put("/hello", handler)
 
-	if requestHandler := router.routes["PUT"][0]; len(router.routes["PUT"]) != 1 ||
-		requestHandler.Path != "/hello" {
+	if reqHandler := router.routes["PUT"][0]; len(router.routes["PUT"]) != 1 ||
+		reqHandler.Path != "/hello" {
 		t.Error("Expected a first request handler to be registered")
 	}
 
 	// Add one more
 	router.Put("/hello/world", handler)
 
-	if requestHandler := router.routes["PUT"][1]; len(router.routes["PUT"]) != 2 ||
-		requestHandler.Path != "/hello/world" {
+	if reqHandler := router.routes["PUT"][1]; len(router.routes["PUT"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
 		t.Error("Expected a second request handler to be registered")
 	}
 }
@@ -332,16 +332,16 @@ func TestDelete(t *testing.T) {
 	// Add one
 	router.Delete("/hello", handler)
 
-	if requestHandler := router.routes["DELETE"][0]; len(router.routes["DELETE"]) != 1 ||
-		requestHandler.Path != "/hello" {
+	if reqHandler := router.routes["DELETE"][0]; len(router.routes["DELETE"]) != 1 ||
+		reqHandler.Path != "/hello" {
 		t.Error("Expected a first request handler to be registered")
 	}
 
 	// Add one more
 	router.Delete("/hello/world", handler)
 
-	if requestHandler := router.routes["DELETE"][1]; len(router.routes["DELETE"]) != 2 ||
-		requestHandler.Path != "/hello/world" {
+	if reqHandler := router.routes["DELETE"][1]; len(router.routes["DELETE"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
 		t.Error("Expected a second request handler to be registered")
 	}
 }
@@ -417,7 +417,7 @@ func TestServeHTTP(t *testing.T) {
 // Helpers....
 // ---------------------------------
 
-func isRequestHandlerDeepEqual(first *RequestHandler, second *RequestHandler) bool {
+func isrequestHandlerDeepEqual(first *requestHandler, second *requestHandler) bool {
 	if first.Path != second.Path ||
 		!reflect.DeepEqual(first.ParamNames, second.ParamNames) ||
 		!reflect.DeepEqual(first.Regex, second.Regex) ||

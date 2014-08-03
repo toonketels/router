@@ -20,7 +20,7 @@ import (
 // Store to keep track of the request parameters
 var paramsStore = make(map[*http.Request]map[string]string)
 
-type RequestHandler struct {
+type requestHandler struct {
 	Path       string
 	ParamNames []string
 	Regex      *regexp.Regexp
@@ -31,7 +31,7 @@ type RequestHandler struct {
 // A Router to register paths and requesthandlers to.
 // There should be only one per application.
 type Router struct {
-	routes map[string][]*RequestHandler
+	routes map[string][]*requestHandler
 }
 
 // NewRouter creates a router, starts handling those routes and
@@ -39,11 +39,11 @@ type Router struct {
 func NewRouter() (router *Router) {
 	router = new(Router)
 
-	router.routes = map[string][]*RequestHandler{
-		"GET":    make([]*RequestHandler, 0),
-		"POST":   make([]*RequestHandler, 0),
-		"PUT":    make([]*RequestHandler, 0),
-		"DELETE": make([]*RequestHandler, 0),
+	router.routes = map[string][]*requestHandler{
+		"GET":    make([]*requestHandler, 0),
+		"POST":   make([]*requestHandler, 0),
+		"PUT":    make([]*requestHandler, 0),
+		"DELETE": make([]*requestHandler, 0),
 	}
 
 	// We cannot instantiate multipe routers as they all will
@@ -66,34 +66,34 @@ func Params(req *http.Request) (reqParams map[string]string, ok bool) {
 
 // Register a GET path to be handled.
 func (router *Router) Get(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("GET", path, handler)
+	router.registerrequestHandler("GET", path, handler)
 }
 
 // Register a POST path to be handled.
 func (router *Router) Post(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("POST", path, handler)
+	router.registerrequestHandler("POST", path, handler)
 }
 
 // Register a PUT path to be handled.
 func (router *Router) Put(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("PUT", path, handler)
+	router.registerrequestHandler("PUT", path, handler)
 }
 
 // Register a DELETE path to be handled.
 func (router *Router) Delete(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("DELETE", path, handler)
+	router.registerrequestHandler("DELETE", path, handler)
 }
 
 // Private API to start handling the registered routes.
 func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	// For each of the registered routes for this request method...
-	for _, requestHandler := range router.routes[req.Method] {
+	for _, reqHandler := range router.routes[req.Method] {
 		// Only when the route matches...
-		if isAMatch, withParams := requestHandler.Matches(req.URL.Path); isAMatch {
+		if isAMatch, withParams := reqHandler.Matches(req.URL.Path); isAMatch {
 			// Capture the route params
 			paramsStore[req] = withParams
 			// Fire the handler
-			requestHandler.Handler(res, req)
+			reqHandler.Handler(res, req)
 			// Clean up
 			delete(paramsStore, req)
 			break
@@ -122,16 +122,16 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 	return
 }
 
-func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
-	requestHandler := makeRequestHandler(path, handler)
-	router.routes[method] = append(router.routes[method], requestHandler)
+func (router *Router) registerrequestHandler(method string, path string, handler http.HandlerFunc) {
+	reqHandler := makerequestHandler(path, handler)
+	router.routes[method] = append(router.routes[method], reqHandler)
 }
 
-// Creates the RequestHandler struct from the given path
-func makeRequestHandler(path string, handler http.HandlerFunc) (requestHandler *RequestHandler) {
+// Creates the requestHandler struct from the given path
+func makerequestHandler(path string, handler http.HandlerFunc) (reqHandler *requestHandler) {
 	regexpPath, withParamNames := buildRegexpFor(path)
 
-	requestHandler = &RequestHandler{
+	reqHandler = &requestHandler{
 		Path:       path,
 		ParamNames: withParamNames,
 		Regex:      regexp.MustCompile(regexpPath),
@@ -141,22 +141,22 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (requestHandler *
 	return
 }
 
-func (requestHandler *RequestHandler) Matches(path string) (isAMatch bool, withParams map[string]string) {
+func (reqHandler *requestHandler) Matches(path string) (isAMatch bool, withParams map[string]string) {
 	withParams = make(map[string]string)
 	isAMatch = false
 
 	// Compare strings only when we know the path registered
 	// does not contain tokens
-	if !requestHandler.Tokenized {
-		isAMatch = requestHandler.Path == path
+	if !reqHandler.Tokenized {
+		isAMatch = reqHandler.Path == path
 		return
 	}
 
 	// Compare via regex when the path does contain tokens
-	matches := requestHandler.Regex.FindAllStringSubmatch(path, -1)
+	matches := reqHandler.Regex.FindAllStringSubmatch(path, -1)
 	// Only try to find the params if we have a match
 	if isAMatch = len(matches) != 0; isAMatch {
-		for i, paramName := range requestHandler.ParamNames {
+		for i, paramName := range reqHandler.ParamNames {
 			withParams[paramName] = matches[0][i+1]
 		}
 	}
