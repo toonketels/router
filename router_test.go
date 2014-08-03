@@ -437,15 +437,29 @@ func TestServeHTTP(t *testing.T) {
 	router := NewRouter()
 
 	indexHandler := func(w http.ResponseWriter, req *http.Request) {
+		params, _ := Params(req)
+		if !reflect.DeepEqual(params, make(map[string]string)) {
+			t.Error("Params do not watch")
+		}
 		w.Write([]byte("index"))
 	}
 
 	listHandler := func(w http.ResponseWriter, req *http.Request) {
+		params, _ := Params(req)
+		if !reflect.DeepEqual(params, make(map[string]string)) {
+			t.Error("Params do not watch")
+		}
 		w.Write([]byte("list"))
+	}
+
+	userDetailHandler := func(w http.ResponseWriter, req *http.Request) {
+		params, _ := Params(req)
+		w.Write([]byte("user detail " + params["userid"]))
 	}
 
 	router.Get("/", indexHandler)
 	router.Get("/list", listHandler)
+	router.Get("/user/:userid", userDetailHandler)
 
 	server := httptest.NewServer(router)
 	defer server.Close()
@@ -463,7 +477,23 @@ func TestServeHTTP(t *testing.T) {
 	res.Body.Close()
 
 	if string(body) != "list" {
-		t.Error("Expected index as response but got ", string(body))
+		t.Error("Expected list as response but got ", string(body))
+	}
+
+	res, _ = http.Get(server.URL + "/user/14")
+	body, _ = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	if string(body) != "user detail 14" {
+		t.Error("Expected 'user detail 14' as response but got ", string(body))
+	}
+
+	res, _ = http.Get(server.URL + "/user/420")
+	body, _ = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	if string(body) != "user detail 420" {
+		t.Error("Expected 'user detail 420' as response but got ", string(body))
 	}
 }
 

@@ -17,6 +17,9 @@ import (
 	"strings"
 )
 
+// Store to keep track of the request parameters
+var params = make(map[*http.Request]map[string]string)
+
 type RequestHandler struct {
 	Path       string
 	ParamNames []string
@@ -29,7 +32,6 @@ type RequestHandler struct {
 // There should be only one per application.
 type Router struct {
 	routes map[string][]*RequestHandler
-	params map[*http.Request]map[string]string
 }
 
 // NewRouter creates a router, starts handling those routes and
@@ -44,8 +46,6 @@ func NewRouter() (router *Router) {
 		"DELETE": make([]*RequestHandler, 0),
 	}
 
-	router.params = make(map[*http.Request]map[string]string)
-
 	// We cannot instantiate multipe routers as they all will
 	// try to handle "/" which panics the system.
 	//
@@ -58,8 +58,9 @@ func NewRouter() (router *Router) {
 	return
 }
 
-func (router *Router) Params(req *http.Request) (reqParams map[string]string, ok bool) {
-	reqParams, ok = router.params[req]
+// Access the request parameters for a given request
+func Params(req *http.Request) (reqParams map[string]string, ok bool) {
+	reqParams, ok = params[req]
 	return
 }
 
@@ -85,9 +86,16 @@ func (router *Router) Delete(path string, handler http.HandlerFunc) {
 
 // Private API to start handling the registered routes.
 func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	// For each of the registered routes for this request method...
 	for _, requestHandler := range router.routes[req.Method] {
-		if isAMatch, _ := requestHandler.Matches(req.URL.Path); isAMatch {
+		// Only when the route matches...
+		if isAMatch, withParams := requestHandler.Matches(req.URL.Path); isAMatch {
+			// Capture the route params
+			params[req] = withParams
+			// Fire the handler
 			requestHandler.Handler(res, req)
+			// Clean up
+			delete(params, req)
 			break
 		}
 	}
