@@ -89,7 +89,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	// For each of the registered routes for this request method...
 	for _, reqHandler := range router.routes[req.Method] {
 		// Only when the route matches...
-		if isAMatch, withParams := reqHandler.Matches(req.URL.Path); isAMatch {
+		if isAMatch, withParams := reqHandler.matches(req.URL.Path); isAMatch {
 			// Capture the route params
 			paramsStore[req] = withParams
 			// Fire the handler
@@ -141,7 +141,10 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requ
 	return
 }
 
-func (reqHandler *requestHandler) Matches(path string) (isAMatch bool, withParams map[string]string) {
+// requestHandler.matches checks if the given handler matches the given given string.
+//
+// It will also return to which uservalues the params evaluate for this path.
+func (reqHandler *requestHandler) matches(path string) (isAMatch bool, withParams map[string]string) {
 	withParams = make(map[string]string)
 	isAMatch = false
 

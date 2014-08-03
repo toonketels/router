@@ -125,7 +125,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := reqHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
@@ -147,7 +147,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := reqHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
@@ -170,7 +170,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := reqHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
@@ -194,7 +194,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		isAMatch, withParams := reqHandler.Matches(test.path)
+		isAMatch, withParams := reqHandler.matches(test.path)
 		if isAMatch != test.expectedMatch {
 			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
 		}
