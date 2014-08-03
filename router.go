@@ -26,10 +26,16 @@ var paramsStore = make(map[*http.Request]map[string]string)
 // Router
 // ----------------------
 
-// A Router to register paths and requesthandlers to.
-// There should be only one per application.
+// A Router to register paths and requestHandlers to.
+//
+// Set a custom NotFoundHandler if you want to override go's default one.
+//
+// There can be multiple per application, if so, don't forget to pass a
+// different pattern to `router.Handle()`.
 type Router struct {
 	routes map[string][]*requestHandler
+	// Specify a custom NotFoundHandler
+	NotFoundHandler http.HandlerFunc
 }
 
 // NewRouter creates a router and returns a pointer to it so
@@ -82,10 +88,14 @@ func (router *Router) Handle(pattern string) {
 // Needed by go to actually start handling the registered routes.
 // You don't need to call this yourself.
 func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	unMatched := true
+
 	// For each of the registered routes for this request method...
 	for _, reqHandler := range router.routes[req.Method] {
 		// Only when the route matches...
 		if isAMatch, withParams := reqHandler.matches(req.URL.Path); isAMatch {
+			unMatched = false
+
 			// Capture the route params
 			paramsStore[req] = withParams
 			// Fire the handler
@@ -95,12 +105,26 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			break
 		}
 	}
+
+	// Nothing found...
+	if unMatched {
+		router.notFound(res, req)
+	}
 }
 
 // Helper function to actually register the requestHandler on the router
 func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
 	reqHandler := makeRequestHandler(path, handler)
 	router.routes[method] = append(router.routes[method], reqHandler)
+}
+
+// Helper function to dispatch the correct NotFoundHanler.
+func (router *Router) notFound(w http.ResponseWriter, req *http.Request) {
+	if router.NotFoundHandler != nil {
+		router.NotFoundHandler(w, req)
+	} else {
+		http.NotFound(w, req)
+	}
 }
 
 // Exported helper funcs
