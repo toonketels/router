@@ -101,21 +101,25 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func createRegexp(path string) (string, []string) {
+// Some paths use tokens like "/user/:userid" where "userid" is the token.
+//
+// This function builds a string to be compiled as a regexp to match those
+// paths and returns the names of the parameters found in the route.
+func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 	parts := strings.Split(path, "/")
 	items := make([]string, 0)
-	params := make([]string, 0)
+	withParamNames = make([]string, 0)
 	for _, part := range parts {
 		if strings.HasPrefix(part, ":") {
 			nameOnly := strings.Trim(part, ":")
-			params = append(params, nameOnly)
+			withParamNames = append(withParamNames, nameOnly)
 			items = append(items, `([^\/]+)`)
 		} else {
 			items = append(items, part)
 		}
 	}
-	regStr := "^" + strings.Join(items, `\/`) + "$"
-	return regStr, params
+	regexpPath = "^" + strings.Join(items, `\/`) + "$"
+	return
 }
 
 func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
@@ -125,13 +129,13 @@ func (router *Router) registerRequestHandler(method string, path string, handler
 
 // Creates the RequestHandler struct from the given path
 func makeRequestHandler(path string, handler http.HandlerFunc) (requestHandler *RequestHandler) {
-	regStr, params := createRegexp(path)
+	regexpPath, withParamNames := buildRegexpFor(path)
 
 	requestHandler = &RequestHandler{
 		Path:       path,
-		ParamNames: params,
-		Regex:      regexp.MustCompile(regStr),
-		Tokenized:  len(params) != 0,
+		ParamNames: withParamNames,
+		Regex:      regexp.MustCompile(regexpPath),
+		Tokenized:  len(withParamNames) != 0,
 		Handler:    handler,
 	}
 	return

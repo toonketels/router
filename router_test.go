@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestCreateRegExp(t *testing.T) {
+func TestBuildRegexpFor(t *testing.T) {
 
 	type testPair struct {
 		input  string
@@ -26,14 +26,14 @@ func TestCreateRegExp(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		r, _ := createRegexp(test.input)
+		r, _ := buildRegexpFor(test.input)
 		if r != test.reg {
 			t.Error("Expected ", test.reg, " got ", r)
 		}
 	}
 
 	for _, test := range testPairs {
-		_, p := createRegexp(test.input)
+		_, p := buildRegexpFor(test.input)
 		if !reflect.DeepEqual(test.params, p) {
 			t.Error("Expected ", test.params, " got ", p)
 		}
