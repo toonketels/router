@@ -191,25 +191,29 @@ func TestMakeRequestHandler(t *testing.T) {
 func TestMatches(t *testing.T) {
 
 	type testPair struct {
-		path     string
-		expected bool
+		path           string
+		expectedMatch  bool
+		expectedParams map[string]string
 	}
 
 	handler := func(w http.ResponseWriter, req *http.Request) {}
 	requestHandler := makeRequestHandler("/hello", handler)
 
 	testPairs := []testPair{
-		{"/hello", true},
-		{"/hello/", false},
-		{"/helloo", false},
-		{"/helo", false},
-		{"/hello/something", false},
+		{"/hello", true, make(map[string]string)},
+		{"/hello/", false, make(map[string]string)},
+		{"/helloo", false, make(map[string]string)},
+		{"/helo", false, make(map[string]string)},
+		{"/hello/something", false, make(map[string]string)},
 	}
 
 	for _, test := range testPairs {
-		isMatch := requestHandler.Matches(test.path)
-		if isMatch != test.expected {
-			t.Error("Expected ", test.expected, " got ", isMatch, " for path ", test.path)
+		isAMatch, withParams := requestHandler.Matches(test.path)
+		if isAMatch != test.expectedMatch {
+			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
+		}
+		if !reflect.DeepEqual(test.expectedParams, withParams) {
+			t.Error("Expected ", test.expectedParams, " got ", withParams, " for path ", test.path)
 		}
 	}
 
@@ -217,18 +221,21 @@ func TestMatches(t *testing.T) {
 	requestHandler = makeRequestHandler("/hello/world", handler)
 
 	testPairs = []testPair{
-		{"/hello", false},
-		{"/hello/", false},
-		{"/hello/world", true},
-		{"/helloo/world", false},
-		{"/hello/world/", false},
-		{"/hello/something", false},
+		{"/hello", false, make(map[string]string)},
+		{"/hello/", false, make(map[string]string)},
+		{"/hello/world", true, make(map[string]string)},
+		{"/helloo/world", false, make(map[string]string)},
+		{"/hello/world/", false, make(map[string]string)},
+		{"/hello/something", false, make(map[string]string)},
 	}
 
 	for _, test := range testPairs {
-		isMatch := requestHandler.Matches(test.path)
-		if isMatch != test.expected {
-			t.Error("Expected ", test.expected, " got ", isMatch, " for path ", test.path)
+		isAMatch, withParams := requestHandler.Matches(test.path)
+		if isAMatch != test.expectedMatch {
+			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
+		}
+		if !reflect.DeepEqual(test.expectedParams, withParams) {
+			t.Error("Expected ", test.expectedParams, " got ", withParams, " for path ", test.path)
 		}
 	}
 
@@ -236,19 +243,22 @@ func TestMatches(t *testing.T) {
 	requestHandler = makeRequestHandler("/hello/:world", handler)
 
 	testPairs = []testPair{
-		{"/hello", false},
-		{"/hello/", false},
-		{"/hello/world", true},
-		{"/hello/:world", true},
-		{"/hello/14", true},
-		{"/hello/15/", false},
-		{"/hello/15/something", false},
+		{"/hello", false, make(map[string]string)},
+		{"/hello/", false, make(map[string]string)},
+		{"/hello/world", true, map[string]string{"world": "world"}},
+		{"/hello/:world", true, map[string]string{"world": ":world"}},
+		{"/hello/14", true, map[string]string{"world": "14"}},
+		{"/hello/15/", false, make(map[string]string)},
+		{"/hello/15/something", false, make(map[string]string)},
 	}
 
 	for _, test := range testPairs {
-		isMatch := requestHandler.Matches(test.path)
-		if isMatch != test.expected {
-			t.Error("Expected ", test.expected, " got ", isMatch, " for path ", test.path)
+		isAMatch, withParams := requestHandler.Matches(test.path)
+		if isAMatch != test.expectedMatch {
+			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
+		}
+		if !reflect.DeepEqual(test.expectedParams, withParams) {
+			t.Error("Expected ", test.expectedParams, " got ", withParams, " for path ", test.path)
 		}
 	}
 
@@ -256,20 +266,23 @@ func TestMatches(t *testing.T) {
 	requestHandler = makeRequestHandler("/hello/:world/and/:goodmorning", handler)
 
 	testPairs = []testPair{
-		{"/hello", false},
-		{"/hello/:world/and/:goodmorning", true},
-		{"/hello/12/and/54", true},
-		{"/hello/16/and/something-else", true},
-		{"/hello/:world/and/:goodmorning/", false},
-		{"/hello/12/and/54/", false},
-		{"/hello/16/and/something-else/", false},
-		{"/hello/:world/and/:goodmorning/456", false},
+		{"/hello", false, make(map[string]string)},
+		{"/hello/:world/and/:goodmorning", true, map[string]string{"world": ":world", "goodmorning": ":goodmorning"}},
+		{"/hello/12/and/54", true, map[string]string{"world": "12", "goodmorning": "54"}},
+		{"/hello/16/and/something-else", true, map[string]string{"world": "16", "goodmorning": "something-else"}},
+		{"/hello/:world/and/:goodmorning/", false, make(map[string]string)},
+		{"/hello/12/and/54/", false, make(map[string]string)},
+		{"/hello/16/and/something-else/", false, make(map[string]string)},
+		{"/hello/:world/and/:goodmorning/456", false, make(map[string]string)},
 	}
 
 	for _, test := range testPairs {
-		isMatch := requestHandler.Matches(test.path)
-		if isMatch != test.expected {
-			t.Error("Expected ", test.expected, " got ", isMatch, " for path ", test.path)
+		isAMatch, withParams := requestHandler.Matches(test.path)
+		if isAMatch != test.expectedMatch {
+			t.Error("Expected ", test.expectedMatch, " got ", isAMatch, " for path ", test.path)
+		}
+		if !reflect.DeepEqual(test.expectedParams, withParams) {
+			t.Error("Expected ", test.expectedParams, " got ", withParams, " for path ", test.path)
 		}
 	}
 }

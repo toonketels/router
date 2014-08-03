@@ -17,8 +17,6 @@ import (
 	"strings"
 )
 
-var params map[*http.Request]map[string]string
-
 type RequestHandler struct {
 	Path       string
 	ParamNames []string
@@ -31,6 +29,7 @@ type RequestHandler struct {
 // There should be only one per application.
 type Router struct {
 	routes map[string][]*RequestHandler
+	params map[*http.Request]map[string]string
 }
 
 // NewRouter creates a router, starts handling those routes and
@@ -45,7 +44,7 @@ func NewRouter() (router *Router) {
 		"DELETE": make([]*RequestHandler, 0),
 	}
 
-	params = make(map[*http.Request]map[string]string)
+	router.params = make(map[*http.Request]map[string]string)
 
 	// We cannot instantiate multipe routers as they all will
 	// try to handle "/" which panics the system.
@@ -59,8 +58,8 @@ func NewRouter() (router *Router) {
 	return
 }
 
-func Params(req *http.Request) (reqParams map[string]string, ok bool) {
-	reqParams, ok = params[req]
+func (router *Router) Params(req *http.Request) (reqParams map[string]string, ok bool) {
+	reqParams, ok = router.params[req]
 	return
 }
 
@@ -87,7 +86,7 @@ func (router *Router) Delete(path string, handler http.HandlerFunc) {
 // Private API to start handling the registered routes.
 func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	for _, requestHandler := range router.routes[req.Method] {
-		if requestHandler.Matches(req.URL.Path) {
+		if isAMatch, _ := requestHandler.Matches(req.URL.Path); isAMatch {
 			requestHandler.Handler(res, req)
 			break
 		}
@@ -158,10 +157,24 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (requestHandler *
 	return
 }
 
-func (requestHandler *RequestHandler) Matches(path string) bool {
+func (requestHandler *RequestHandler) Matches(path string) (isAMatch bool, withParams map[string]string) {
+	withParams = make(map[string]string)
+	isAMatch = false
+
+	// Compare strings only when we know the path registered
+	// does not contain tokens
 	if !requestHandler.Tokenized {
-		return requestHandler.Path == path
+		isAMatch = requestHandler.Path == path
+		return
 	}
+
+	// Compare via regex when the path does contain tokens
 	matches := requestHandler.Regex.FindAllStringSubmatch(path, -1)
-	return len(matches) != 0
+	// Only try to find the params if we have a match
+	if isAMatch = len(matches) != 0; isAMatch {
+		for i, paramName := range requestHandler.ParamNames {
+			withParams[paramName] = matches[0][i+1]
+		}
+	}
+	return
 }
