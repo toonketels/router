@@ -17,16 +17,14 @@ import (
 	"strings"
 )
 
+// Stores
+// ----------------------
+
 // Store to keep track of the request parameters
 var paramsStore = make(map[*http.Request]map[string]string)
 
-type requestHandler struct {
-	Path       string
-	ParamNames []string
-	Regex      *regexp.Regexp
-	Tokenized  bool
-	Handler    http.HandlerFunc
-}
+// Router
+// ----------------------
 
 // A Router to register paths and requesthandlers to.
 // There should be only one per application.
@@ -55,12 +53,6 @@ func NewRouter() (router *Router) {
 	// we have a better solution.
 	// @TODO: fix this
 	// http.Handle("/", router)
-	return
-}
-
-// Access the request parameters for a given request
-func Params(req *http.Request) (reqParams map[string]string, ok bool) {
-	reqParams, ok = paramsStore[req]
 	return
 }
 
@@ -101,6 +93,24 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// Helper function to actually register the requestHandler on the router
+func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
+	reqHandler := makeRequestHandler(path, handler)
+	router.routes[method] = append(router.routes[method], reqHandler)
+}
+
+// Exported helper funcs
+// ---------------------------
+
+// Access the request parameters for a given request
+func Params(req *http.Request) (reqParams map[string]string, ok bool) {
+	reqParams, ok = paramsStore[req]
+	return
+}
+
+// Private helper funcs
+// ---------------------------
+
 // Some paths use tokens like "/user/:userid" where "userid" is the token.
 //
 // This function builds a string to be compiled as a regexp to match those
@@ -122,11 +132,6 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 	return
 }
 
-func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
-	reqHandler := makeRequestHandler(path, handler)
-	router.routes[method] = append(router.routes[method], reqHandler)
-}
-
 // Creates the requestHandler struct from the given path
 func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requestHandler) {
 	regexpPath, withParamNames := buildRegexpFor(path)
@@ -139,6 +144,19 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requ
 		Handler:    handler,
 	}
 	return
+}
+
+// RequestHandler
+// --------------------------------
+
+// RequestHandler stores info to evaluate if a route can be
+// matched, for which params and which handlerFunc to dispatch.
+type requestHandler struct {
+	Path       string
+	ParamNames []string
+	Regex      *regexp.Regexp
+	Tokenized  bool
+	Handler    http.HandlerFunc
 }
 
 // requestHandler.matches checks if the given handler matches the given given string.
