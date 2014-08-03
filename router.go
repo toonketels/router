@@ -32,8 +32,11 @@ type Router struct {
 	routes map[string][]*requestHandler
 }
 
-// NewRouter creates a router, starts handling those routes and
-// returns a pointer to it.
+// NewRouter creates a router and returns a pointer to it so
+// you can start registering routes.
+//
+// Dont forget to call `router.Handle(pattern)` to actually use
+// the router.
 func NewRouter() (router *Router) {
 	router = new(Router)
 
@@ -43,16 +46,6 @@ func NewRouter() (router *Router) {
 		"PUT":    make([]*requestHandler, 0),
 		"DELETE": make([]*requestHandler, 0),
 	}
-
-	// We cannot instantiate multipe routers as they all will
-	// try to handle "/" which panics the system.
-	//
-	// This is especially an issue in testing.
-	//
-	// Let people handle it manually for now until
-	// we have a better solution.
-	// @TODO: fix this
-	// http.Handle("/", router)
 	return
 }
 
@@ -76,7 +69,18 @@ func (router *Router) Delete(path string, handler http.HandlerFunc) {
 	router.registerRequestHandler("DELETE", path, handler)
 }
 
-// Private API to start handling the registered routes.
+// Handle registers the router for the given pattern in the DefaultServeMux.
+// The documentation for ServeMux explains how patterns are matched.
+//
+// This just delegetes to `http.Handle()` internally.
+//
+// Most of the times, you just want to do `router.Handle("/")`.
+func (router *Router) Handle(pattern string) {
+	http.Handle(pattern, router)
+}
+
+// Needed by go to actually start handling the registered routes.
+// You don't need to call this yourself.
 func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	// For each of the registered routes for this request method...
 	for _, reqHandler := range router.routes[req.Method] {
