@@ -18,7 +18,7 @@ import (
 )
 
 // Store to keep track of the request parameters
-var params = make(map[*http.Request]map[string]string)
+var paramsStore = make(map[*http.Request]map[string]string)
 
 type RequestHandler struct {
 	Path       string
@@ -60,7 +60,7 @@ func NewRouter() (router *Router) {
 
 // Access the request parameters for a given request
 func Params(req *http.Request) (reqParams map[string]string, ok bool) {
-	reqParams, ok = params[req]
+	reqParams, ok = paramsStore[req]
 	return
 }
 
@@ -91,11 +91,11 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		// Only when the route matches...
 		if isAMatch, withParams := requestHandler.Matches(req.URL.Path); isAMatch {
 			// Capture the route params
-			params[req] = withParams
+			paramsStore[req] = withParams
 			// Fire the handler
 			requestHandler.Handler(res, req)
 			// Clean up
-			delete(params, req)
+			delete(paramsStore, req)
 			break
 		}
 	}
