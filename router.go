@@ -101,30 +101,6 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func FindParams(path string) map[string]string {
-	parts := strings.Split(path, "/")
-	items := make(map[string]string)
-	for i, value := range parts {
-		if strings.HasPrefix(value, ":") {
-			trimmed := strings.Trim(value, ":")
-			items[trimmed] = trimmed + string(i)
-		}
-	}
-	return items
-}
-
-func findParamNames(path string) []string {
-	parts := strings.Split(path, "/")
-	items := make([]string, 0)
-	for _, value := range parts {
-		if strings.HasPrefix(value, ":") {
-			trimmed := strings.Trim(value, ":")
-			items = append(items, trimmed)
-		}
-	}
-	return items
-}
-
 func createRegexp(path string) (string, []string) {
 	parts := strings.Split(path, "/")
 	items := make([]string, 0)
@@ -140,10 +116,6 @@ func createRegexp(path string) (string, []string) {
 	}
 	regStr := "^" + strings.Join(items, `\/`) + "$"
 	return regStr, params
-}
-
-func isTokenized(path string) bool {
-	return strings.Contains(path, ":")
 }
 
 func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
