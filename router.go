@@ -12,6 +12,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -20,8 +21,14 @@ import (
 // Stores
 // ----------------------
 
+type context struct {
+	Error error
+	Final bool
+}
+
 // Store to keep track of the request parameters
 var paramsStore = make(map[*http.Request]map[string]string)
+var contextStore = make(map[*http.Request]*context)
 
 // Router
 // ----------------------
@@ -56,23 +63,23 @@ func NewRouter() (router *Router) {
 }
 
 // Register a GET path to be handled.
-func (router *Router) Get(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("GET", path, handler)
+func (router *Router) Get(path string, handlers ...http.HandlerFunc) {
+	router.registerRequestHandler("GET", path, handlers...)
 }
 
 // Register a POST path to be handled.
-func (router *Router) Post(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("POST", path, handler)
+func (router *Router) Post(path string, handlers ...http.HandlerFunc) {
+	router.registerRequestHandler("POST", path, handlers...)
 }
 
 // Register a PUT path to be handled.
-func (router *Router) Put(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("PUT", path, handler)
+func (router *Router) Put(path string, handlers ...http.HandlerFunc) {
+	router.registerRequestHandler("PUT", path, handlers...)
 }
 
 // Register a DELETE path to be handled.
-func (router *Router) Delete(path string, handler http.HandlerFunc) {
-	router.registerRequestHandler("DELETE", path, handler)
+func (router *Router) Delete(path string, handlers ...http.HandlerFunc) {
+	router.registerRequestHandler("DELETE", path, handlers...)
 }
 
 // Handle registers the router for the given pattern in the DefaultServeMux.
@@ -98,10 +105,29 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 			// Capture the route params
 			paramsStore[req] = withParams
-			// Fire the handler
-			reqHandler.Handle(res, req)
+			// Create a context
+			contxt := new(context)
+			contextStore[req] = contxt
+			// Call the preHandlers
+			// for _, preHandler := range reqHandler.PreHandlers {
+			// 	preHandler(res, req)
+			// 	if contxt.Final {
+			// 		break
+			// 	}
+			// }
+			// if !contxt.Final {
+			// 	// Fire the handler
+			// 	reqHandler.Handle(res, req)
+			// 	// Clean up
+			// 	delete(paramsStore, req)
+			// 	delete(contextStore, req)
+			// 	break
+			// }
+
+			dispatchHandlers(reqHandler, res, req, contxt)
 			// Clean up
 			delete(paramsStore, req)
+			delete(contextStore, req)
 			break
 		}
 	}
@@ -112,9 +138,31 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func dispatchHandlers(reqHandler *requestHandler, res http.ResponseWriter, req *http.Request, cntxt *context) {
+	// Call the preHandlers
+	for _, preHandler := range reqHandler.PreHandlers {
+		preHandler(res, req)
+		if cntxt.Final {
+			break
+		}
+	}
+	if !cntxt.Final {
+		// Fire the handler
+		reqHandler.Handle(res, req)
+	}
+}
+
 // Helper function to actually register the requestHandler on the router
-func (router *Router) registerRequestHandler(method string, path string, handler http.HandlerFunc) {
-	reqHandler := makeRequestHandler(path, handler)
+func (router *Router) registerRequestHandler(method string, path string, handlers ...http.HandlerFunc) {
+	fmt.Println(len(handlers))
+
+	// Get the number of requestHandlers
+	total := len(handlers)
+	// The last one is the main requestHandler, create it
+	reqHandler := makeRequestHandler(path, handlers[total-1])
+	// Attach the others as preHandlers
+	reqHandler.PreHandlers = getPreHandlers(handlers)
+	fmt.Println(reqHandler)
 	router.routes[method] = append(router.routes[method], reqHandler)
 }
 
@@ -130,9 +178,20 @@ func (router *Router) notFound(res http.ResponseWriter, req *http.Request) {
 // Exported helper funcs
 // ---------------------------
 
+func getPreHandlers(handlers []http.HandlerFunc) (preHandlers []http.HandlerFunc) {
+	preHandlers = make([]http.HandlerFunc, len(handlers)-1)
+	copy(preHandlers, handlers)
+	return
+}
+
 // Access the request parameters for a given request
 func Params(req *http.Request) (reqParams map[string]string, ok bool) {
 	reqParams, ok = paramsStore[req]
+	return
+}
+
+func Context(req *http.Request) (contxt *context, ok bool) {
+	contxt, ok = contextStore[req]
 	return
 }
 
@@ -180,11 +239,12 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requ
 // RequestHandler stores info to evaluate if a route can be
 // matched, for which params and which handlerFunc to dispatch.
 type requestHandler struct {
-	Path       string
-	ParamNames []string
-	Regex      *regexp.Regexp
-	Tokenized  bool
-	Handle     http.HandlerFunc
+	Path        string
+	ParamNames  []string
+	Regex       *regexp.Regexp
+	Tokenized   bool
+	Handle      http.HandlerFunc
+	PreHandlers []http.HandlerFunc
 }
 
 // requestHandler.matches checks if the given handler matches the given given string.
