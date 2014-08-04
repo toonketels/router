@@ -12,7 +12,6 @@
 package router
 
 import (
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -21,14 +20,9 @@ import (
 // Stores
 // ----------------------
 
-type context struct {
-	Error error
-	Final bool
-}
-
 // Store to keep track of the request parameters
 var paramsStore = make(map[*http.Request]map[string]string)
-var contextStore = make(map[*http.Request]*context)
+var requestContextStore = make(map[*http.Request]*RequestContext)
 
 // Router
 // ----------------------
@@ -105,29 +99,14 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 			// Capture the route params
 			paramsStore[req] = withParams
-			// Create a context
-			contxt := new(context)
-			contextStore[req] = contxt
-			// Call the preHandlers
-			// for _, preHandler := range reqHandler.PreHandlers {
-			// 	preHandler(res, req)
-			// 	if contxt.Final {
-			// 		break
-			// 	}
-			// }
-			// if !contxt.Final {
-			// 	// Fire the handler
-			// 	reqHandler.Handle(res, req)
-			// 	// Clean up
-			// 	delete(paramsStore, req)
-			// 	delete(contextStore, req)
-			// 	break
-			// }
-
+			// Create a RequestContext
+			contxt := new(RequestContext)
+			requestContextStore[req] = contxt
+			// Call the handlers
 			dispatchHandlers(reqHandler, res, req, contxt)
 			// Clean up
 			delete(paramsStore, req)
-			delete(contextStore, req)
+			delete(requestContextStore, req)
 			break
 		}
 	}
@@ -138,31 +117,14 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func dispatchHandlers(reqHandler *requestHandler, res http.ResponseWriter, req *http.Request, cntxt *context) {
-	// Call the preHandlers
-	for _, preHandler := range reqHandler.PreHandlers {
-		preHandler(res, req)
-		if cntxt.Final {
-			break
-		}
-	}
-	if !cntxt.Final {
-		// Fire the handler
-		reqHandler.Handle(res, req)
-	}
-}
-
 // Helper function to actually register the requestHandler on the router
 func (router *Router) registerRequestHandler(method string, path string, handlers ...http.HandlerFunc) {
-	fmt.Println(len(handlers))
-
 	// Get the number of requestHandlers
 	total := len(handlers)
 	// The last one is the main requestHandler, create it
 	reqHandler := makeRequestHandler(path, handlers[total-1])
 	// Attach the others as preHandlers
 	reqHandler.PreHandlers = getPreHandlers(handlers)
-	fmt.Println(reqHandler)
 	router.routes[method] = append(router.routes[method], reqHandler)
 }
 
@@ -190,13 +152,14 @@ func Params(req *http.Request) (reqParams map[string]string, ok bool) {
 	return
 }
 
-func Context(req *http.Request) (contxt *context, ok bool) {
-	contxt, ok = contextStore[req]
-	return
-}
-
 // Private helper funcs
 // ---------------------------
+
+func dispatchHandlers(reqHandler *requestHandler, res http.ResponseWriter, req *http.Request, cntxt *RequestContext) {
+	cntxt.handlers = reqHandler.PreHandlers
+	cntxt.handlers = append(cntxt.handlers, reqHandler.Handle)
+	cntxt.Next(res, req)
+}
 
 // Some paths use tokens like "/user/:userid" where "userid" is the token.
 //
@@ -231,6 +194,37 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requ
 		Handle:     handler,
 	}
 	return
+}
+
+// Context
+// --------------------------------
+
+// RequestContext contains data related to the current request
+type RequestContext struct {
+	Error          error
+	Final          bool
+	handlers       []http.HandlerFunc
+	currentHandler int
+}
+
+// Context returns a pointer to the RequestContext for the current request.
+func Context(req *http.Request) (cntxt *RequestContext) {
+	cntxt = requestContextStore[req]
+	return
+}
+
+// RequestContext.Next() allows a http.HandleFunc to invoke the next HandleFunc.
+// This is useful when multiple HandleFuncs are registered for a given path
+// and allows the creation and use of `middleware`.
+func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
+	var handler http.HandlerFunc
+	if len(cntxt.handlers) < cntxt.currentHandler+1 {
+		handler = func(res http.ResponseWriter, req *http.Request) {}
+	} else {
+		handler = cntxt.handlers[cntxt.currentHandler]
+	}
+	cntxt.currentHandler++
+	handler(res, req)
 }
 
 // RequestHandler
