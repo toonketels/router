@@ -348,6 +348,50 @@ func TestDelete(t *testing.T) {
 	}
 }
 
+// Tests registration of middlewareHandlers
+func TestUse(t *testing.T) {
+	aRouter := NewRouter()
+
+	firstMReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("first"))
+		Context(req).Next(res, req)
+	}
+
+	secondMReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("second"))
+		Context(req).Next(res, req)
+	}
+
+	thirdMReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("third"))
+	}
+
+	if len(aRouter.middleware) != 0 {
+		t.Error("A new router should not have middleware, we got ", len(aRouter.middleware))
+	}
+
+	aRouter.Use("/", firstMReqHandler)
+	if len(aRouter.middleware) != 1 ||
+		reflect.ValueOf(aRouter.middleware[0].Handle).Pointer() != reflect.ValueOf(firstMReqHandler).Pointer() ||
+		aRouter.middleware[0].MountPath != "/" {
+		t.Error("The middleware should have been registered to the router")
+	}
+
+	aRouter.Use("/api", secondMReqHandler)
+	if len(aRouter.middleware) != 2 ||
+		reflect.ValueOf(aRouter.middleware[1].Handle).Pointer() != reflect.ValueOf(secondMReqHandler).Pointer() ||
+		aRouter.middleware[1].MountPath != "/api" {
+		t.Error("The middleware should have been registered to the router")
+	}
+
+	aRouter.Use("/", thirdMReqHandler)
+	if len(aRouter.middleware) != 3 ||
+		reflect.ValueOf(aRouter.middleware[2].Handle).Pointer() != reflect.ValueOf(thirdMReqHandler).Pointer() ||
+		aRouter.middleware[2].MountPath != "/" {
+		t.Error("The middleware should have been registered to the router")
+	}
+}
+
 // End-to-end ish
 // --------------------------------
 
@@ -526,50 +570,6 @@ func TestMiddleware(t *testing.T) {
 
 	if string(body) != "index mReqHandlerapi mReqHandlerfirstsecond" {
 		t.Error("Expected 'index mReqHandlerapi mReqHandlerfirstsecond' as response but got ", string(body))
-	}
-}
-
-// Tests registration of middlewareHandlers
-func TestUse(t *testing.T) {
-	aRouter := NewRouter()
-
-	firstMReqHandler := func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("first"))
-		Context(req).Next(res, req)
-	}
-
-	secondMReqHandler := func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("second"))
-		Context(req).Next(res, req)
-	}
-
-	thirdMReqHandler := func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("third"))
-	}
-
-	if len(aRouter.middleware) != 0 {
-		t.Error("A new router should not have middleware, we got ", len(aRouter.middleware))
-	}
-
-	aRouter.Use("/", firstMReqHandler)
-	if len(aRouter.middleware) != 1 ||
-		reflect.ValueOf(aRouter.middleware[0].Handle).Pointer() != reflect.ValueOf(firstMReqHandler).Pointer() ||
-		aRouter.middleware[0].MountPath != "/" {
-		t.Error("The middleware should have been registered to the router")
-	}
-
-	aRouter.Use("/api", secondMReqHandler)
-	if len(aRouter.middleware) != 2 ||
-		reflect.ValueOf(aRouter.middleware[1].Handle).Pointer() != reflect.ValueOf(secondMReqHandler).Pointer() ||
-		aRouter.middleware[1].MountPath != "/api" {
-		t.Error("The middleware should have been registered to the router")
-	}
-
-	aRouter.Use("/", thirdMReqHandler)
-	if len(aRouter.middleware) != 3 ||
-		reflect.ValueOf(aRouter.middleware[2].Handle).Pointer() != reflect.ValueOf(thirdMReqHandler).Pointer() ||
-		aRouter.middleware[2].MountPath != "/" {
-		t.Error("The middleware should have been registered to the router")
 	}
 }
 
