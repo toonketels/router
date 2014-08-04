@@ -137,46 +137,13 @@ func (router *Router) registerRequestHandler(method string, path string, handler
 	router.routes[method] = append(router.routes[method], reqHandler)
 }
 
-// Helper function to dispatch the correct NotFoundHanler.
+// Helper function to dispatch the correct NotFoundHandler.
 func (router *Router) notFound(res http.ResponseWriter, req *http.Request) {
 	if router.NotFoundHandler != nil {
 		router.NotFoundHandler(res, req)
 	} else {
 		http.NotFound(res, req)
 	}
-}
-
-// Exported helper funcs
-// ---------------------------
-
-func getPreHandlers(handlers []http.HandlerFunc) (preHandlers []http.HandlerFunc) {
-	preHandlers = make([]http.HandlerFunc, len(handlers)-1)
-	copy(preHandlers, handlers)
-	return
-}
-
-// Private helper funcs
-// ---------------------------
-
-// Some paths use tokens like "/user/:userid" where "userid" is the token.
-//
-// This function builds a string to be compiled as a regexp to match those
-// paths and returns the names of the parameters found in the route.
-func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
-	parts := strings.Split(path, "/")
-	items := make([]string, 0)
-	withParamNames = make([]string, 0)
-	for _, part := range parts {
-		if strings.HasPrefix(part, ":") {
-			nameOnly := strings.Trim(part, ":")
-			withParamNames = append(withParamNames, nameOnly)
-			items = append(items, `([^\/]+)`)
-		} else {
-			items = append(items, part)
-		}
-	}
-	regexpPath = "^" + strings.Join(items, `\/`) + "$"
-	return
 }
 
 // Creates the requestHandler struct from the given path
@@ -224,9 +191,8 @@ type RequestContext struct {
 }
 
 // Context returns a pointer to the RequestContext for the current request.
-func Context(req *http.Request) (cntxt *RequestContext) {
-	cntxt = requestContextStore[req]
-	return
+func Context(req *http.Request) *RequestContext {
+	return requestContextStore[req]
 }
 
 // RequestContext.Next() allows a http.HandleFunc to invoke the next HandleFunc.
@@ -241,20 +207,6 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 	}
 	cntxt.currentHandler++
 	handler(res, req)
-}
-
-// MiddlewareRequestHandler
-// --------------------------------
-
-type middlewareRequestHandler struct {
-	MountPath string
-	Handle    http.HandlerFunc
-	Matcher   *regexp.Regexp
-}
-
-// Checks whether the middlewareRequestHandler matches the given path.
-func (mReqHandler *middlewareRequestHandler) shouldMount(path string) bool {
-	return mReqHandler.Matcher.MatchString(path)
 }
 
 // RequestHandler
@@ -292,5 +244,43 @@ func (reqHandler *requestHandler) matches(path string) (isAMatch bool, withParam
 			withParams[paramName] = matches[0][i+1]
 		}
 	}
+	return
+}
+
+// MiddlewareRequestHandler
+// --------------------------------
+
+type middlewareRequestHandler struct {
+	MountPath string
+	Handle    http.HandlerFunc
+	Matcher   *regexp.Regexp
+}
+
+// Checks whether the middlewareRequestHandler matches the given path.
+func (mReqHandler *middlewareRequestHandler) shouldMount(path string) bool {
+	return mReqHandler.Matcher.MatchString(path)
+}
+
+// Private helper funcs
+// ---------------------------
+
+// Some paths use tokens like "/user/:userid" where "userid" is the token.
+//
+// This function builds a string to be compiled as a regexp to match those
+// paths and returns the names of the parameters found in the route.
+func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
+	parts := strings.Split(path, "/")
+	items := make([]string, 0)
+	withParamNames = make([]string, 0)
+	for _, part := range parts {
+		if strings.HasPrefix(part, ":") {
+			nameOnly := strings.Trim(part, ":")
+			withParamNames = append(withParamNames, nameOnly)
+			items = append(items, `([^\/]+)`)
+		} else {
+			items = append(items, part)
+		}
+	}
+	regexpPath = "^" + strings.Join(items, `\/`) + "$"
 	return
 }
