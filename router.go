@@ -119,11 +119,11 @@ func (router *Router) registerRequestHandler(method string, path string, handler
 }
 
 // Helper function to dispatch the correct NotFoundHanler.
-func (router *Router) notFound(w http.ResponseWriter, req *http.Request) {
+func (router *Router) notFound(res http.ResponseWriter, req *http.Request) {
 	if router.NotFoundHandler != nil {
-		router.NotFoundHandler(w, req)
+		router.NotFoundHandler(res, req)
 	} else {
-		http.NotFound(w, req)
+		http.NotFound(res, req)
 	}
 }
 

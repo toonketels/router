@@ -47,7 +47,7 @@ func TestMakeRequestHandler(t *testing.T) {
 		expected requestHandler
 	}
 
-	handleFunc := func(w http.ResponseWriter, req *http.Request) {}
+	handleFunc := func(res http.ResponseWriter, req *http.Request) {}
 
 	testPairs := []testPair{
 		{input: "/hello",
@@ -113,7 +113,7 @@ func TestMatches(t *testing.T) {
 		expectedParams map[string]string
 	}
 
-	handler := func(w http.ResponseWriter, req *http.Request) {}
+	handler := func(res http.ResponseWriter, req *http.Request) {}
 	reqHandler := makeRequestHandler("/hello", handler)
 
 	testPairs := []testPair{
@@ -215,7 +215,7 @@ func TestRegisterRequestHandler(t *testing.T) {
 		t.Error("No handlers should be registered yet")
 	}
 
-	handler := func(w http.ResponseWriter, req *http.Request) {}
+	handler := func(res http.ResponseWriter, req *http.Request) {}
 
 	// Add one
 	router.registerRequestHandler("GET", "/hello", handler)
@@ -243,7 +243,7 @@ func TestGet(t *testing.T) {
 		t.Error("No GET handlers should be registered yet")
 	}
 
-	handler := func(w http.ResponseWriter, req *http.Request) {}
+	handler := func(res http.ResponseWriter, req *http.Request) {}
 
 	// Add one
 	router.Get("/hello", handler)
@@ -271,7 +271,7 @@ func TestPost(t *testing.T) {
 		t.Error("No POST handlers should be registered yet")
 	}
 
-	handler := func(w http.ResponseWriter, req *http.Request) {}
+	handler := func(res http.ResponseWriter, req *http.Request) {}
 
 	// Add one
 	router.Post("/hello", handler)
@@ -299,7 +299,7 @@ func TestPut(t *testing.T) {
 		t.Error("No PUT handlers should be registered yet")
 	}
 
-	handler := func(w http.ResponseWriter, req *http.Request) {}
+	handler := func(res http.ResponseWriter, req *http.Request) {}
 
 	// Add one
 	router.Put("/hello", handler)
@@ -327,7 +327,7 @@ func TestDelete(t *testing.T) {
 		t.Error("No DELETE handlers should be registered yet")
 	}
 
-	handler := func(w http.ResponseWriter, req *http.Request) {}
+	handler := func(res http.ResponseWriter, req *http.Request) {}
 
 	// Add one
 	router.Delete("/hello", handler)
@@ -353,25 +353,25 @@ func TestDelete(t *testing.T) {
 func TestServeHTTP(t *testing.T) {
 	router := NewRouter()
 
-	indexHandler := func(w http.ResponseWriter, req *http.Request) {
+	indexHandler := func(res http.ResponseWriter, req *http.Request) {
 		params, _ := Params(req)
 		if !reflect.DeepEqual(params, make(map[string]string)) {
 			t.Error("Params do not watch")
 		}
-		w.Write([]byte("index"))
+		res.Write([]byte("index"))
 	}
 
-	listHandler := func(w http.ResponseWriter, req *http.Request) {
+	listHandler := func(res http.ResponseWriter, req *http.Request) {
 		params, _ := Params(req)
 		if !reflect.DeepEqual(params, make(map[string]string)) {
 			t.Error("Params do not watch")
 		}
-		w.Write([]byte("list"))
+		res.Write([]byte("list"))
 	}
 
-	userDetailHandler := func(w http.ResponseWriter, req *http.Request) {
+	userDetailHandler := func(res http.ResponseWriter, req *http.Request) {
 		params, _ := Params(req)
-		w.Write([]byte("user detail " + params["userid"]))
+		res.Write([]byte("user detail " + params["userid"]))
 	}
 
 	router.Get("/", indexHandler)
