@@ -33,10 +33,10 @@ var requestContextStore = make(map[*http.Request]*RequestContext)
 // There can be multiple per application, if so, don't forget to pass a
 // different pattern to `router.Handle()`.
 type Router struct {
-	routes     map[string][]*requestHandler
-	middleware []middlewareRequestHandler
-	// Specify a custom NotFoundHandler
-	NotFoundHandler http.HandlerFunc
+	routes          map[string][]*requestHandler
+	middleware      []middlewareRequestHandler
+	NotFoundHandler http.HandlerFunc                                    // Specify a custom NotFoundHandler
+	ErrorHandler    func(res http.ResponseWriter, err string, code int) // Specify a custom ErrorHandler
 }
 
 // NewRouter creates a router and returns a pointer to it so
@@ -53,6 +53,9 @@ func NewRouter() (router *Router) {
 		"PUT":    make([]*requestHandler, 0),
 		"DELETE": make([]*requestHandler, 0),
 	}
+
+	// Ensure we have an error handler set
+	router.ErrorHandler = http.Error
 	return
 }
 
@@ -116,6 +119,8 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			cntxt.Params = withParams
 			// Attach the handlers to the context
 			cntxt.handlers = reqHandler.Handlers
+			// Set the errorhandler
+			cntxt.errorHandler = router.ErrorHandler
 			// Dispatch the first handler,
 			// the request is being served.
 			cntxt.Next(res, req)
@@ -183,11 +188,12 @@ func (router *Router) middlewareToMount(path string) (mountedMiddleware []http.H
 
 // RequestContext contains data related to the current request
 type RequestContext struct {
-	Error          error
+	inError        bool
 	Final          bool
 	Params         map[string]string
 	handlers       []http.HandlerFunc
 	currentHandler int
+	errorHandler   func(res http.ResponseWriter, err string, code int)
 }
 
 // Context returns a pointer to the RequestContext for the current request.
@@ -199,6 +205,13 @@ func Context(req *http.Request) *RequestContext {
 // This is useful when multiple HandleFuncs are registered for a given path
 // and allows the creation and use of `middleware`.
 func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
+	// Dont continue when erroring
+	if cntxt.inError {
+		return
+	}
+	// For safety reasons, we ensur there is always an emtpy requestHandler to be
+	// called. This to prevent panics when the last requestHandler would call next.
+	// Wont happen often but better safe than sorry.
 	var handler http.HandlerFunc
 	if len(cntxt.handlers) < cntxt.currentHandler+1 {
 		handler = func(res http.ResponseWriter, req *http.Request) {}
@@ -207,6 +220,18 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 	}
 	cntxt.currentHandler++
 	handler(res, req)
+}
+
+// requestContext.Error() allows you to respond with an error message preventing the
+// subsequent handlers from being executed.
+//
+// Note: in case there exist previous requestHandlers and they have code after their
+//       next call, that code will get execute.
+//       This allows loggers and such to finish what they started (though they can also
+//       use a defer for that).
+func (cntxt *RequestContext) Error(res http.ResponseWriter, err string, code int) {
+	cntxt.inError = true
+	cntxt.errorHandler(res, err, code)
 }
 
 // RequestHandler

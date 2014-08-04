@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -570,6 +571,173 @@ func TestMiddleware(t *testing.T) {
 
 	if string(body) != "index mReqHandlerapi mReqHandlerfirstsecond" {
 		t.Error("Expected 'index mReqHandlerapi mReqHandlerfirstsecond' as response but got ", string(body))
+	}
+}
+
+// Test errorHandler
+func TestErrorHandler(t *testing.T) {
+	aRouter := NewRouter()
+
+	indexReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		Context(req).Error(res, "error in indexReqHandler", 500)
+		Context(req).Next(res, req)
+	}
+
+	firstHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("first"))
+		Context(req).Next(res, req)
+	}
+
+	// Register middleware
+	aRouter.Use("/", indexReqHandler)
+
+	// Register routes
+	aRouter.Get("/", firstHandler)
+
+	server := httptest.NewServer(aRouter)
+	defer server.Close()
+
+	res, _ := http.Get(server.URL)
+	body, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	// Test defaultErrorHandler
+	if string(body) != "error in indexReqHandler\n" ||
+		res.StatusCode != 500 {
+		t.Error("Expected 'error in indexReqHandler' as response but got ", string(body))
+	}
+
+	// Test custom ErrorHandler
+	aRouter.ErrorHandler = func(res http.ResponseWriter, err string, code int) {
+		http.Error(res, strings.ToUpper(err), code)
+	}
+
+	res, _ = http.Get(server.URL)
+	body, _ = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	if string(body) != "ERROR IN INDEXREQHANDLER\n" ||
+		res.StatusCode != 500 {
+		t.Error("Expected 'ERROR IN INDEXREQHANDLER' as response but got ", string(body))
+	}
+
+	// Another testcase, indexReqHandler works
+	aRouter = NewRouter()
+	indexHandlerBeforeNext := false
+	indexHandlerAfterNext := false
+	secondHandlerBeforeNextBeforeError := false
+	secondHandlerBeforeNextAfterError := false
+	secondHandlerAfterNext := false
+	thirdHandlerExecuted := false
+	shouldError := true
+
+	indexReqHandler = func(res http.ResponseWriter, req *http.Request) {
+		indexHandlerBeforeNext = true
+		Context(req).Next(res, req)
+		indexHandlerAfterNext = true
+	}
+
+	secondHandler := func(res http.ResponseWriter, req *http.Request) {
+		secondHandlerBeforeNextBeforeError = true
+		if shouldError {
+			Context(req).Error(res, "error in secondHandler", 400)
+		}
+		secondHandlerBeforeNextAfterError = true
+		Context(req).Next(res, req)
+		secondHandlerAfterNext = true
+	}
+
+	thirdHandler := func(res http.ResponseWriter, req *http.Request) {
+		thirdHandlerExecuted = true
+		res.Write([]byte("third"))
+	}
+
+	// Register middleware
+	aRouter.Use("/", indexReqHandler)
+
+	// Register routes
+	aRouter.Get("/", secondHandler, thirdHandler)
+
+	server = httptest.NewServer(aRouter)
+	defer server.Close()
+
+	res, _ = http.Get(server.URL)
+	body, _ = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	// Test defaultErrorHandler
+	if string(body) != "error in secondHandler\n" ||
+		res.StatusCode != 400 {
+		t.Error("Expected 'error in secondHandler' as response but got ", string(body))
+	}
+
+	if indexHandlerBeforeNext != true ||
+		indexHandlerAfterNext != true {
+		t.Error("It should invoke the before and after code of handlers called before the error occurred")
+	}
+
+	if secondHandlerBeforeNextBeforeError != true ||
+		secondHandlerBeforeNextAfterError != true ||
+		secondHandlerAfterNext != true {
+		t.Error("It will execute all the code in the erring handler if no return is used")
+	}
+
+	if thirdHandlerExecuted != false {
+		t.Error("It should never execute any handler after the erring handler")
+	}
+
+	// Properly using return on error
+	aRouter = NewRouter()
+	indexHandlerBeforeNext = false
+	indexHandlerAfterNext = false
+	secondHandlerBeforeNextBeforeError = false
+	secondHandlerBeforeNextAfterError = false
+	secondHandlerAfterNext = false
+	thirdHandlerExecuted = false
+
+	secondHandler = func(res http.ResponseWriter, req *http.Request) {
+		secondHandlerBeforeNextBeforeError = true
+		if shouldError {
+			Context(req).Error(res, "error in secondHandler", 501)
+			return
+		}
+		secondHandlerBeforeNextAfterError = true
+		Context(req).Next(res, req)
+		secondHandlerAfterNext = true
+	}
+
+	// Register middleware
+	aRouter.Use("/", indexReqHandler)
+
+	// Register routes
+	aRouter.Get("/", secondHandler, thirdHandler)
+
+	server = httptest.NewServer(aRouter)
+	defer server.Close()
+
+	res, _ = http.Get(server.URL)
+	body, _ = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	// Test defaultErrorHandler
+	if string(body) != "error in secondHandler\n" ||
+		res.StatusCode != 501 {
+		t.Error("Expected 'error in secondHandler' as response but got ", string(body))
+	}
+
+	if indexHandlerBeforeNext != true ||
+		indexHandlerAfterNext != true {
+		t.Error("It should invoke the before and after code of handlers called before the error occurred")
+	}
+
+	if secondHandlerBeforeNextBeforeError != true ||
+		secondHandlerBeforeNextAfterError != false ||
+		secondHandlerAfterNext != false {
+		t.Error("It will only execute the code in the handlers before the error occured if a proper return is used")
+	}
+
+	if thirdHandlerExecuted != false {
+		t.Error("It should never execute any handler after the erring handler")
 	}
 }
 
