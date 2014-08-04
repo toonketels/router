@@ -109,13 +109,13 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			unMatched = false
 
 			// Create a RequestContext
-			contxt := new(RequestContext)
+			cntxt := new(RequestContext)
 			// Capture the route params
-			contxt.Params = withParams
+			cntxt.Params = withParams
 			// Store the requestContext
-			requestContextStore[req] = contxt
+			requestContextStore[req] = cntxt
 			// Call the handlers
-			dispatchHandlers(reqHandler, res, req, contxt)
+			dispatchHandlers(reqHandler, res, req, cntxt)
 			// Clean up
 			delete(requestContextStore, req)
 			break
