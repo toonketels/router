@@ -35,7 +35,7 @@ var requestContextStore = make(map[*http.Request]*RequestContext)
 // different pattern to `router.Handle()`.
 type Router struct {
 	routes     map[string][]*requestHandler
-	middleware []MiddlewareRequestHandler
+	middleware []middlewareRequestHandler
 	// Specify a custom NotFoundHandler
 	NotFoundHandler http.HandlerFunc
 }
@@ -80,7 +80,7 @@ func (router *Router) Delete(path string, handlers ...http.HandlerFunc) {
 // Use register a middleware requestHandler which will be evaulated on each
 // path corresponding to the mountPath
 func (router *Router) Use(mountPath string, handler http.HandlerFunc) {
-	mReqHandler := MiddlewareRequestHandler{
+	mReqHandler := middlewareRequestHandler{
 		MountPath: mountPath,
 		Handle:    handler,
 		Matcher:   regexp.MustCompile(`^\` + mountPath),
@@ -255,14 +255,14 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 // MiddlewareRequestHandler
 // --------------------------------
 
-type MiddlewareRequestHandler struct {
+type middlewareRequestHandler struct {
 	MountPath string
 	Handle    http.HandlerFunc
 	Matcher   *regexp.Regexp
 }
 
 // Checks whether the middlewareRequestHandler matches the given path.
-func (mReqHandler *MiddlewareRequestHandler) shouldMount(path string) bool {
+func (mReqHandler *middlewareRequestHandler) shouldMount(path string) bool {
 	return mReqHandler.Matcher.MatchString(path)
 }
 
