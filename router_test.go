@@ -393,6 +393,42 @@ func TestUse(t *testing.T) {
 	}
 }
 
+func TestSet(t *testing.T) {
+	cntxt := new(RequestContext)
+
+	// Store should be empty
+	if len(cntxt.store) != 0 {
+		t.Error("Store should be empty")
+	}
+
+	ok := cntxt.Set("one", 1)
+	if ok != true {
+		t.Error("Store should return true when setting new values")
+	}
+	if len(cntxt.store) != 1 ||
+		cntxt.store["one"] != 1 {
+		t.Error("Set should store an item")
+	}
+
+	ok = cntxt.Set(4, "four")
+	if ok != true {
+		t.Error("Store should return true when setting new values")
+	}
+	if len(cntxt.store) != 2 ||
+		cntxt.store[4] != "four" {
+		t.Error("Set should store an item")
+	}
+
+	ok = cntxt.Set(4, "five")
+	if ok != false {
+		t.Error("Store should return false when setting new values")
+	}
+	if len(cntxt.store) != 2 ||
+		cntxt.store[4] != "four" {
+		t.Error("Set should not allow existing keys to be overriden")
+	}
+}
+
 // End-to-end ish
 // --------------------------------
 

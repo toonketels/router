@@ -188,12 +188,12 @@ func (router *Router) middlewareToMount(path string) (mountedMiddleware []http.H
 
 // RequestContext contains data related to the current request
 type RequestContext struct {
-	inError        bool
-	Final          bool
 	Params         map[string]string
+	inError        bool
 	handlers       []http.HandlerFunc
 	currentHandler int
 	errorHandler   func(res http.ResponseWriter, err string, code int)
+	store          map[interface{}]interface{}
 }
 
 // Context returns a pointer to the RequestContext for the current request.
@@ -232,6 +232,25 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 func (cntxt *RequestContext) Error(res http.ResponseWriter, err string, code int) {
 	cntxt.inError = true
 	cntxt.errorHandler(res, err, code)
+}
+
+// requestContext.Set() allows you to save a value for the current request.
+// Wont set the value if the key is already used.
+func (cntxt *RequestContext) Set(key, val interface{}) bool {
+	// Lazely create the store
+	cntxt.makeStoreIfNotExist()
+	if cntxt.store[key] != nil {
+		return false
+	}
+	cntxt.store[key] = val
+	return true
+}
+
+// Lazely creates the store if it does not yet exist
+func (cntxt *RequestContext) makeStoreIfNotExist() {
+	if cntxt.store == nil {
+		cntxt.store = make(map[interface{}]interface{})
+	}
 }
 
 // RequestHandler
