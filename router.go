@@ -110,12 +110,15 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 			// Create a RequestContext
 			cntxt := new(RequestContext)
-			// Capture the route params
-			cntxt.Params = withParams
 			// Store the requestContext
 			requestContextStore[req] = cntxt
-			// Call the handlers
-			dispatchHandlers(reqHandler, res, req, cntxt)
+			// Capture the route params
+			cntxt.Params = withParams
+			// Attach the handlers to the context
+			cntxt.handlers = reqHandler.Handlers
+			// Dispatch the first handler,
+			// the request is being served.
+			cntxt.Next(res, req)
 			// Clean up
 			delete(requestContextStore, req)
 			break
@@ -154,12 +157,6 @@ func getPreHandlers(handlers []http.HandlerFunc) (preHandlers []http.HandlerFunc
 
 // Private helper funcs
 // ---------------------------
-
-// Attaches the handlers to the context and starts dispatching the first one.
-func dispatchHandlers(reqHandler *requestHandler, res http.ResponseWriter, req *http.Request, cntxt *RequestContext) {
-	cntxt.handlers = reqHandler.Handlers
-	cntxt.Next(res, req)
-}
 
 // Some paths use tokens like "/user/:userid" where "userid" is the token.
 //
