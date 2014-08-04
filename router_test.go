@@ -456,6 +456,26 @@ func TestForceSet(t *testing.T) {
 	}
 }
 
+func TestContextGet(t *testing.T) {
+	cntxt := new(RequestContext)
+	_ = cntxt.Set("one", 1)
+	_ = cntxt.Set(4, "four")
+
+	if val, ok := cntxt.Get("one"); ok != true ||
+		val != 1 {
+		t.Error("Get should return the correct value")
+	}
+
+	if val, ok := cntxt.Get(4); ok != true ||
+		val != "four" {
+		t.Error("Get should return the correct value")
+	}
+	if val, ok := cntxt.Get("doesNotExist"); ok != false ||
+		val != nil {
+		t.Error("Get should return nothing when key does not exist")
+	}
+}
+
 // End-to-end ish
 // --------------------------------
 

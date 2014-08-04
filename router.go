@@ -254,6 +254,14 @@ func (cntxt *RequestContext) ForceSet(key, val interface{}) {
 	cntxt.store[key] = val
 }
 
+// requestContext.Get() allows you to fetch data from the store.
+func (cntxt *RequestContext) Get(key interface{}) (val interface{}, ok bool) {
+	// Lazely create the store
+	cntxt.makeStoreIfNotExist()
+	val, ok = cntxt.store[key]
+	return
+}
+
 // Lazely creates the store if it does not yet exist
 func (cntxt *RequestContext) makeStoreIfNotExist() {
 	if cntxt.store == nil {
