@@ -400,7 +400,7 @@ func TestServeHTTP(t *testing.T) {
 	router := NewRouter()
 
 	indexHandler := func(res http.ResponseWriter, req *http.Request) {
-		params, _ := Params(req)
+		params := Context(req).Params
 		if !reflect.DeepEqual(params, make(map[string]string)) {
 			t.Error("Params do not watch")
 		}
@@ -408,7 +408,7 @@ func TestServeHTTP(t *testing.T) {
 	}
 
 	listHandler := func(res http.ResponseWriter, req *http.Request) {
-		params, _ := Params(req)
+		params := Context(req).Params
 		if !reflect.DeepEqual(params, make(map[string]string)) {
 			t.Error("Params do not watch")
 		}
@@ -416,7 +416,7 @@ func TestServeHTTP(t *testing.T) {
 	}
 
 	userDetailHandler := func(res http.ResponseWriter, req *http.Request) {
-		params, _ := Params(req)
+		params := Context(req).Params
 		res.Write([]byte("user detail " + params["userid"]))
 	}
 

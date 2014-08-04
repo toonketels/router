@@ -20,8 +20,7 @@ import (
 // Stores
 // ----------------------
 
-// Store to keep track of the request parameters
-var paramsStore = make(map[*http.Request]map[string]string)
+// Store to keep track of the requestContext
 var requestContextStore = make(map[*http.Request]*RequestContext)
 
 // Router
@@ -77,7 +76,7 @@ func (router *Router) Delete(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("DELETE", path, handlers...)
 }
 
-// Use register a middleware requestHandler which will be evaulated on each
+// Use registers a middleware requestHandler which will be evaulated on each
 // path corresponding to the mountPath
 func (router *Router) Use(mountPath string, handler http.HandlerFunc) {
 	mReqHandler := middlewareRequestHandler{
@@ -109,15 +108,15 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if isAMatch, withParams := reqHandler.matches(req.URL.Path); isAMatch {
 			unMatched = false
 
-			// Capture the route params
-			paramsStore[req] = withParams
 			// Create a RequestContext
 			contxt := new(RequestContext)
+			// Capture the route params
+			contxt.Params = withParams
+			// Store the requestContext
 			requestContextStore[req] = contxt
 			// Call the handlers
 			dispatchHandlers(reqHandler, res, req, contxt)
 			// Clean up
-			delete(paramsStore, req)
 			delete(requestContextStore, req)
 			break
 		}
@@ -150,12 +149,6 @@ func (router *Router) notFound(res http.ResponseWriter, req *http.Request) {
 func getPreHandlers(handlers []http.HandlerFunc) (preHandlers []http.HandlerFunc) {
 	preHandlers = make([]http.HandlerFunc, len(handlers)-1)
 	copy(preHandlers, handlers)
-	return
-}
-
-// Access the request parameters for a given request
-func Params(req *http.Request) (reqParams map[string]string, ok bool) {
-	reqParams, ok = paramsStore[req]
 	return
 }
 
@@ -228,6 +221,7 @@ func (router *Router) middlewareToMount(path string) (mountedMiddleware []http.H
 type RequestContext struct {
 	Error          error
 	Final          bool
+	Params         map[string]string
 	handlers       []http.HandlerFunc
 	currentHandler int
 }
