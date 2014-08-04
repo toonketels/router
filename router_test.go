@@ -56,7 +56,7 @@ func TestMakeRequestHandler(t *testing.T) {
 				ParamNames: make([]string, 0),
 				Regex:      regexp.MustCompile(`^\/hello$`),
 				Tokenized:  false,
-				Handler:    handleFunc,
+				Handle:     handleFunc,
 			},
 		},
 		{input: "/hello/world",
@@ -65,7 +65,7 @@ func TestMakeRequestHandler(t *testing.T) {
 				ParamNames: make([]string, 0),
 				Regex:      regexp.MustCompile(`^\/hello\/world$`),
 				Tokenized:  false,
-				Handler:    handleFunc,
+				Handle:     handleFunc,
 			},
 		},
 		{input: "/hello/:world",
@@ -74,7 +74,7 @@ func TestMakeRequestHandler(t *testing.T) {
 				ParamNames: []string{"world"},
 				Regex:      regexp.MustCompile(`^\/hello\/([^\/]+)$`),
 				Tokenized:  true,
-				Handler:    handleFunc,
+				Handle:     handleFunc,
 			},
 		},
 		{input: "/hello/and/goodmorning",
@@ -83,7 +83,7 @@ func TestMakeRequestHandler(t *testing.T) {
 				ParamNames: make([]string, 0),
 				Regex:      regexp.MustCompile(`^\/hello\/and\/goodmorning$`),
 				Tokenized:  false,
-				Handler:    handleFunc,
+				Handle:     handleFunc,
 			},
 		},
 		{input: "/hello/:and/good/:morning",
@@ -92,7 +92,7 @@ func TestMakeRequestHandler(t *testing.T) {
 				ParamNames: []string{"and", "morning"},
 				Regex:      regexp.MustCompile(`^\/hello\/([^\/]+)\/good\/([^\/]+)$`),
 				Tokenized:  true,
-				Handler:    handleFunc,
+				Handle:     handleFunc,
 			},
 		},
 	}
@@ -422,7 +422,7 @@ func isRequestHandlerDeepEqual(first *requestHandler, second *requestHandler) bo
 		!reflect.DeepEqual(first.ParamNames, second.ParamNames) ||
 		!reflect.DeepEqual(first.Regex, second.Regex) ||
 		first.Tokenized != second.Tokenized ||
-		reflect.ValueOf(first.Handler) != reflect.ValueOf(second.Handler) {
+		reflect.ValueOf(first.Handle) != reflect.ValueOf(second.Handle) {
 		return false
 	}
 	return true

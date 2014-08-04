@@ -99,7 +99,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			// Capture the route params
 			paramsStore[req] = withParams
 			// Fire the handler
-			reqHandler.Handler(res, req)
+			reqHandler.Handle(res, req)
 			// Clean up
 			delete(paramsStore, req)
 			break
@@ -169,7 +169,7 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requ
 		ParamNames: withParamNames,
 		Regex:      regexp.MustCompile(regexpPath),
 		Tokenized:  len(withParamNames) != 0,
-		Handler:    handler,
+		Handle:     handler,
 	}
 	return
 }
@@ -184,7 +184,7 @@ type requestHandler struct {
 	ParamNames []string
 	Regex      *regexp.Regexp
 	Tokenized  bool
-	Handler    http.HandlerFunc
+	Handle     http.HandlerFunc
 }
 
 // requestHandler.matches checks if the given handler matches the given given string.
