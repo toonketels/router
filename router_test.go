@@ -470,6 +470,50 @@ func TestRegisterMultiple(t *testing.T) {
 	}
 }
 
+// Tests registration of middlewareHandlers
+func TestUse(t *testing.T) {
+	router := NewRouter()
+
+	firstMReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("first"))
+		Context(req).Next(res, req)
+	}
+
+	secondMReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("second"))
+		Context(req).Next(res, req)
+	}
+
+	thirdMReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("third"))
+	}
+
+	if len(router.middleware) != 0 {
+		t.Error("A new router should not have middleware, we got ", len(router.middleware))
+	}
+
+	router.Use("/", firstMReqHandler)
+	if len(router.middleware) != 1 ||
+		reflect.ValueOf(router.middleware[0].Handle).Pointer() != reflect.ValueOf(firstMReqHandler).Pointer() ||
+		router.middleware[0].MountPath != "/" {
+		t.Error("The middleware should have been registered to the router")
+	}
+
+	router.Use("/api", secondMReqHandler)
+	if len(router.middleware) != 2 ||
+		reflect.ValueOf(router.middleware[1].Handle).Pointer() != reflect.ValueOf(secondMReqHandler).Pointer() ||
+		router.middleware[1].MountPath != "/api" {
+		t.Error("The middleware should have been registered to the router")
+	}
+
+	router.Use("/", thirdMReqHandler)
+	if len(router.middleware) != 3 ||
+		reflect.ValueOf(router.middleware[2].Handle).Pointer() != reflect.ValueOf(thirdMReqHandler).Pointer() ||
+		router.middleware[2].MountPath != "/" {
+		t.Error("The middleware should have been registered to the router")
+	}
+}
+
 // Helpers....
 // ---------------------------------
 

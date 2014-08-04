@@ -34,7 +34,8 @@ var requestContextStore = make(map[*http.Request]*RequestContext)
 // There can be multiple per application, if so, don't forget to pass a
 // different pattern to `router.Handle()`.
 type Router struct {
-	routes map[string][]*requestHandler
+	routes     map[string][]*requestHandler
+	middleware []MiddlewareRequestHandler
 	// Specify a custom NotFoundHandler
 	NotFoundHandler http.HandlerFunc
 }
@@ -74,6 +75,16 @@ func (router *Router) Put(path string, handlers ...http.HandlerFunc) {
 // Register a DELETE path to be handled.
 func (router *Router) Delete(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("DELETE", path, handlers...)
+}
+
+// Use register a middleware requestHandler which will be evaulated on each
+// path corresponding to the mountPath
+func (router *Router) Use(mountPath string, handler http.HandlerFunc) {
+	mReqHandler := MiddlewareRequestHandler{
+		MountPath: mountPath,
+		Handle:    handler,
+	}
+	router.middleware = append(router.middleware, mReqHandler)
 }
 
 // Handle registers the router for the given pattern in the DefaultServeMux.
@@ -220,6 +231,14 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 	}
 	cntxt.currentHandler++
 	handler(res, req)
+}
+
+// MiddlewareRequestHandler
+// --------------------------------
+
+type MiddlewareRequestHandler struct {
+	MountPath string
+	Handle    http.HandlerFunc
 }
 
 // RequestHandler
