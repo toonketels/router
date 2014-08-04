@@ -119,12 +119,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 // Helper function to actually register the requestHandler on the router
 func (router *Router) registerRequestHandler(method string, path string, handlers ...http.HandlerFunc) {
-	// Get the number of requestHandlers
-	total := len(handlers)
-	// The last one is the main requestHandler, create it
-	reqHandler := makeRequestHandler(path, handlers[total-1])
-	// Attach the others as preHandlers
-	reqHandler.PreHandlers = getPreHandlers(handlers)
+	reqHandler := makeRequestHandler(path, handlers...)
 	router.routes[method] = append(router.routes[method], reqHandler)
 }
 
@@ -155,9 +150,9 @@ func Params(req *http.Request) (reqParams map[string]string, ok bool) {
 // Private helper funcs
 // ---------------------------
 
+// Attaches the handlers to the context and starts dispatching the first one.
 func dispatchHandlers(reqHandler *requestHandler, res http.ResponseWriter, req *http.Request, cntxt *RequestContext) {
-	cntxt.handlers = reqHandler.PreHandlers
-	cntxt.handlers = append(cntxt.handlers, reqHandler.Handle)
+	cntxt.handlers = reqHandler.Handlers
 	cntxt.Next(res, req)
 }
 
@@ -183,7 +178,7 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 }
 
 // Creates the requestHandler struct from the given path
-func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requestHandler) {
+func makeRequestHandler(path string, handlers ...http.HandlerFunc) (reqHandler *requestHandler) {
 	regexpPath, withParamNames := buildRegexpFor(path)
 
 	reqHandler = &requestHandler{
@@ -191,7 +186,7 @@ func makeRequestHandler(path string, handler http.HandlerFunc) (reqHandler *requ
 		ParamNames: withParamNames,
 		Regex:      regexp.MustCompile(regexpPath),
 		Tokenized:  len(withParamNames) != 0,
-		Handle:     handler,
+		Handlers:   handlers,
 	}
 	return
 }
@@ -233,12 +228,11 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 // RequestHandler stores info to evaluate if a route can be
 // matched, for which params and which handlerFunc to dispatch.
 type requestHandler struct {
-	Path        string
-	ParamNames  []string
-	Regex       *regexp.Regexp
-	Tokenized   bool
-	Handle      http.HandlerFunc
-	PreHandlers []http.HandlerFunc
+	Path       string
+	ParamNames []string
+	Regex      *regexp.Regexp
+	Tokenized  bool
+	Handlers   []http.HandlerFunc
 }
 
 // requestHandler.matches checks if the given handler matches the given given string.
