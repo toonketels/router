@@ -235,7 +235,7 @@ func (cntxt *RequestContext) Error(res http.ResponseWriter, err string, code int
 }
 
 // requestContext.Set() allows you to save a value for the current request.
-// Wont set the value if the key is already used.
+// Won't set the value if the key is already used.
 func (cntxt *RequestContext) Set(key, val interface{}) bool {
 	// Lazely create the store
 	cntxt.makeStoreIfNotExist()
@@ -244,6 +244,14 @@ func (cntxt *RequestContext) Set(key, val interface{}) bool {
 	}
 	cntxt.store[key] = val
 	return true
+}
+
+// requestContext.ForceSet() allows you to save a value for the current request.
+// Unlike Set(), it will happely override exisitng data.
+func (cntxt *RequestContext) ForceSet(key, val interface{}) {
+	// Lazely create the store
+	cntxt.makeStoreIfNotExist()
+	cntxt.store[key] = val
 }
 
 // Lazely creates the store if it does not yet exist

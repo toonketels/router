@@ -429,6 +429,33 @@ func TestSet(t *testing.T) {
 	}
 }
 
+func TestForceSet(t *testing.T) {
+	cntxt := new(RequestContext)
+
+	// Store should be empty
+	if len(cntxt.store) != 0 {
+		t.Error("Store should be empty")
+	}
+
+	cntxt.ForceSet("one", 1)
+	if len(cntxt.store) != 1 ||
+		cntxt.store["one"] != 1 {
+		t.Error("RoceSet should store an item")
+	}
+
+	cntxt.ForceSet(4, "four")
+	if len(cntxt.store) != 2 ||
+		cntxt.store[4] != "four" {
+		t.Error("ForceSet should store an item")
+	}
+
+	cntxt.ForceSet(4, "five")
+	if len(cntxt.store) != 2 ||
+		cntxt.store[4] != "five" {
+		t.Error("ForceSet should allow existing keys to be overriden")
+	}
+}
+
 // End-to-end ish
 // --------------------------------
 
