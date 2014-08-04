@@ -83,6 +83,7 @@ func (router *Router) Use(mountPath string, handler http.HandlerFunc) {
 	mReqHandler := MiddlewareRequestHandler{
 		MountPath: mountPath,
 		Handle:    handler,
+		Matcher:   regexp.MustCompile(`^\` + mountPath),
 	}
 	router.middleware = append(router.middleware, mReqHandler)
 }
@@ -130,7 +131,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 // Helper function to actually register the requestHandler on the router
 func (router *Router) registerRequestHandler(method string, path string, handlers ...http.HandlerFunc) {
-	reqHandler := makeRequestHandler(path, handlers...)
+	reqHandler := router.makeRequestHandler(path, handlers...)
 	router.routes[method] = append(router.routes[method], reqHandler)
 }
 
@@ -189,7 +190,14 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 }
 
 // Creates the requestHandler struct from the given path
-func makeRequestHandler(path string, handlers ...http.HandlerFunc) (reqHandler *requestHandler) {
+func (router *Router) makeRequestHandler(path string, handlers ...http.HandlerFunc) (reqHandler *requestHandler) {
+	// Mount middleware
+	middleware := router.middlewareToMount(path)
+	// Make the mountedMiddleware the first handlers to be called
+	// followed by our registered handlers... keeping everything in order
+	handlers = append(middleware, handlers...)
+
+	// Build the regex string to match each incoming request against
 	regexpPath, withParamNames := buildRegexpFor(path)
 
 	reqHandler = &requestHandler{
@@ -198,6 +206,17 @@ func makeRequestHandler(path string, handlers ...http.HandlerFunc) (reqHandler *
 		Regex:      regexp.MustCompile(regexpPath),
 		Tokenized:  len(withParamNames) != 0,
 		Handlers:   handlers,
+	}
+	return
+}
+
+// Returns all middlewareRequestHandlers that should be mounted for the given path.
+func (router *Router) middlewareToMount(path string) (mountedMiddleware []http.HandlerFunc) {
+	mountedMiddleware = make([]http.HandlerFunc, 0)
+	for _, mReqHandler := range router.middleware {
+		if mReqHandler.shouldMount(path) {
+			mountedMiddleware = append(mountedMiddleware, mReqHandler.Handle)
+		}
 	}
 	return
 }
@@ -239,6 +258,12 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 type MiddlewareRequestHandler struct {
 	MountPath string
 	Handle    http.HandlerFunc
+	Matcher   *regexp.Regexp
+}
+
+// Checks whether the middlewareRequestHandler matches the given path.
+func (mReqHandler *MiddlewareRequestHandler) shouldMount(path string) bool {
+	return mReqHandler.Matcher.MatchString(path)
 }
 
 // RequestHandler

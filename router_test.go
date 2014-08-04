@@ -47,6 +47,7 @@ func TestMakeRequestHandler(t *testing.T) {
 		expected requestHandler
 	}
 
+	aRouter := NewRouter()
 	handleFunc := func(res http.ResponseWriter, req *http.Request) {}
 
 	testPairs := []testPair{
@@ -98,7 +99,7 @@ func TestMakeRequestHandler(t *testing.T) {
 	}
 
 	for _, test := range testPairs {
-		reqHandler := makeRequestHandler(test.input, handleFunc)
+		reqHandler := aRouter.makeRequestHandler(test.input, handleFunc)
 		if !isRequestHandlerDeepEqual(&test.expected, reqHandler) {
 			t.Error("Expected ", test.expected, " got ", reqHandler)
 		}
@@ -113,8 +114,9 @@ func TestMatches(t *testing.T) {
 		expectedParams map[string]string
 	}
 
+	aRouter := NewRouter()
 	handler := func(res http.ResponseWriter, req *http.Request) {}
-	reqHandler := makeRequestHandler("/hello", handler)
+	reqHandler := aRouter.makeRequestHandler("/hello", handler)
 
 	testPairs := []testPair{
 		{"/hello", true, make(map[string]string)},
@@ -135,7 +137,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Second...
-	reqHandler = makeRequestHandler("/hello/world", handler)
+	reqHandler = aRouter.makeRequestHandler("/hello/world", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -157,7 +159,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Third...
-	reqHandler = makeRequestHandler("/hello/:world", handler)
+	reqHandler = aRouter.makeRequestHandler("/hello/:world", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -180,7 +182,7 @@ func TestMatches(t *testing.T) {
 	}
 
 	// Fourth...
-	reqHandler = makeRequestHandler("/hello/:world/and/:goodmorning", handler)
+	reqHandler = aRouter.makeRequestHandler("/hello/:world/and/:goodmorning", handler)
 
 	testPairs = []testPair{
 		{"/hello", false, make(map[string]string)},
@@ -470,9 +472,66 @@ func TestRegisterMultiple(t *testing.T) {
 	}
 }
 
+// Test mounting and dispatching middleware
+func TestMiddleware(t *testing.T) {
+	aRouter := NewRouter()
+
+	indexReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("index mReqHandler"))
+		Context(req).Next(res, req)
+	}
+
+	apiReqHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("api mReqHandler"))
+		Context(req).Next(res, req)
+	}
+
+	firstHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("first"))
+		Context(req).Next(res, req)
+	}
+
+	secondHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("second"))
+		Context(req).Next(res, req)
+	}
+
+	thirdHandler := func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("third"))
+	}
+
+	// Register middleware
+	aRouter.Use("/", indexReqHandler)
+	aRouter.Use("/api", apiReqHandler)
+
+	// Register routes
+	aRouter.Get("/", secondHandler, thirdHandler)
+	aRouter.Get("/api", firstHandler, secondHandler)
+
+	server := httptest.NewServer(aRouter)
+	defer server.Close()
+
+	res, _ := http.Get(server.URL)
+	body, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	// It should invoke all three handlers
+	if string(body) != "index mReqHandlersecondthird" {
+		t.Error("Expected 'index mReqHandlersecondthird' as response but got ", string(body))
+	}
+
+	res, _ = http.Get(server.URL + "/api")
+	body, _ = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+
+	if string(body) != "index mReqHandlerapi mReqHandlerfirstsecond" {
+		t.Error("Expected 'index mReqHandlerapi mReqHandlerfirstsecond' as response but got ", string(body))
+	}
+}
+
 // Tests registration of middlewareHandlers
 func TestUse(t *testing.T) {
-	router := NewRouter()
+	aRouter := NewRouter()
 
 	firstMReqHandler := func(res http.ResponseWriter, req *http.Request) {
 		res.Write([]byte("first"))
@@ -488,28 +547,28 @@ func TestUse(t *testing.T) {
 		res.Write([]byte("third"))
 	}
 
-	if len(router.middleware) != 0 {
-		t.Error("A new router should not have middleware, we got ", len(router.middleware))
+	if len(aRouter.middleware) != 0 {
+		t.Error("A new router should not have middleware, we got ", len(aRouter.middleware))
 	}
 
-	router.Use("/", firstMReqHandler)
-	if len(router.middleware) != 1 ||
-		reflect.ValueOf(router.middleware[0].Handle).Pointer() != reflect.ValueOf(firstMReqHandler).Pointer() ||
-		router.middleware[0].MountPath != "/" {
+	aRouter.Use("/", firstMReqHandler)
+	if len(aRouter.middleware) != 1 ||
+		reflect.ValueOf(aRouter.middleware[0].Handle).Pointer() != reflect.ValueOf(firstMReqHandler).Pointer() ||
+		aRouter.middleware[0].MountPath != "/" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
-	router.Use("/api", secondMReqHandler)
-	if len(router.middleware) != 2 ||
-		reflect.ValueOf(router.middleware[1].Handle).Pointer() != reflect.ValueOf(secondMReqHandler).Pointer() ||
-		router.middleware[1].MountPath != "/api" {
+	aRouter.Use("/api", secondMReqHandler)
+	if len(aRouter.middleware) != 2 ||
+		reflect.ValueOf(aRouter.middleware[1].Handle).Pointer() != reflect.ValueOf(secondMReqHandler).Pointer() ||
+		aRouter.middleware[1].MountPath != "/api" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
-	router.Use("/", thirdMReqHandler)
-	if len(router.middleware) != 3 ||
-		reflect.ValueOf(router.middleware[2].Handle).Pointer() != reflect.ValueOf(thirdMReqHandler).Pointer() ||
-		router.middleware[2].MountPath != "/" {
+	aRouter.Use("/", thirdMReqHandler)
+	if len(aRouter.middleware) != 3 ||
+		reflect.ValueOf(aRouter.middleware[2].Handle).Pointer() != reflect.ValueOf(thirdMReqHandler).Pointer() ||
+		aRouter.middleware[2].MountPath != "/" {
 		t.Error("The middleware should have been registered to the router")
 	}
 }
