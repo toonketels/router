@@ -1,14 +1,3 @@
-// Some utility functions to be refactored into their own packages.
-//
-// We want an api like:
-// var router := NewRouter()
-// router.Get("path", handler)
-// router.Post("path", handler)
-// router.Put("path", handler)
-// router.Delete("path", handler)
-//
-// Once a user tries to register a path/handler we do
-//   - analyse the path
 package router
 
 import (
@@ -59,28 +48,32 @@ func NewRouter() (router *Router) {
 	return
 }
 
-// Register a GET path to be handled.
+// Register a GET path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted handlerFuncs).
 func (router *Router) Get(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("GET", path, handlers...)
 }
 
-// Register a POST path to be handled.
+// Register a POST path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted handlerFuncs).
 func (router *Router) Post(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("POST", path, handlers...)
 }
 
-// Register a PUT path to be handled.
+// Register a PUT path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted handlerFuncs).
 func (router *Router) Put(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("PUT", path, handlers...)
 }
 
-// Register a DELETE path to be handled.
+// Register a DELETE path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted handlerFuncs).
 func (router *Router) Delete(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("DELETE", path, handlers...)
 }
 
-// Use registers a middleware requestHandler which will be evaulated on each
-// path corresponding to the mountPath
+// Use registers a middleware requestHandler which will be evaluated on each
+// path corresponding to the mountPath.
 func (router *Router) Use(mountPath string, handler http.HandlerFunc) {
 	mReqHandler := middlewareRequestHandler{
 		MountPath: mountPath,
@@ -226,9 +219,9 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 // subsequent handlers from being executed.
 //
 // Note: in case there exist previous requestHandlers and they have code after their
-//       next call, that code will get execute.
-//       This allows loggers and such to finish what they started (though they can also
-//       use a defer for that).
+// next call, that code will get execute.
+// This allows loggers and such to finish what they started (though they can also
+// use a defer for that).
 func (cntxt *RequestContext) Error(res http.ResponseWriter, req *http.Request, err string, code int) {
 	cntxt.inError = true
 	cntxt.errorHandler(res, req, err, code)
