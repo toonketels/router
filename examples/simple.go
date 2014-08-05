@@ -5,7 +5,7 @@
 //
 // Go view the results by pointing your browser to
 //      `http://localhost:3000/hello`
-package simple
+package main
 
 import (
 	"github.com/toonketels/router"

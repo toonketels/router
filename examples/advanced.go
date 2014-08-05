@@ -9,7 +9,7 @@
 // Check the logger output on the command line.
 // You'll see something like
 //      `GET /user/20/hello 5.916us`
-package advanced
+package main
 
 import (
 	"fmt"
@@ -47,7 +47,7 @@ func logger(res http.ResponseWriter, req *http.Request) {
 
 	// We log once all other handlerFuncs are done executing
 	// so it needs to come after our call to cntxt.Next()
-	fmt.Println(req.Method, req.URL.Path, time.Now().Sub(start))
+	fmt.Println(req.Method, req.URL.Path, time.Since(start))
 }
 
 func loadUser(res http.ResponseWriter, req *http.Request) {
