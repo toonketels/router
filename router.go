@@ -35,8 +35,8 @@ var requestContextStore = make(map[*http.Request]*RequestContext)
 type Router struct {
 	routes          map[string][]*requestHandler
 	middleware      []middlewareRequestHandler
-	NotFoundHandler http.HandlerFunc                                    // Specify a custom NotFoundHandler
-	ErrorHandler    func(res http.ResponseWriter, err string, code int) // Specify a custom ErrorHandler
+	NotFoundHandler http.HandlerFunc                                                       // Specify a custom NotFoundHandler
+	ErrorHandler    func(res http.ResponseWriter, req *http.Request, err string, code int) // Specify a custom ErrorHandler
 }
 
 // NewRouter creates a router and returns a pointer to it so
@@ -55,7 +55,7 @@ func NewRouter() (router *Router) {
 	}
 
 	// Ensure we have an error handler set
-	router.ErrorHandler = http.Error
+	router.ErrorHandler = defaultErrorHandler
 	return
 }
 
@@ -192,7 +192,7 @@ type RequestContext struct {
 	inError        bool
 	handlers       []http.HandlerFunc
 	currentHandler int
-	errorHandler   func(res http.ResponseWriter, err string, code int)
+	errorHandler   func(res http.ResponseWriter, req *http.Request, err string, code int)
 	store          map[interface{}]interface{}
 }
 
@@ -229,9 +229,9 @@ func (cntxt *RequestContext) Next(res http.ResponseWriter, req *http.Request) {
 //       next call, that code will get execute.
 //       This allows loggers and such to finish what they started (though they can also
 //       use a defer for that).
-func (cntxt *RequestContext) Error(res http.ResponseWriter, err string, code int) {
+func (cntxt *RequestContext) Error(res http.ResponseWriter, req *http.Request, err string, code int) {
 	cntxt.inError = true
-	cntxt.errorHandler(res, err, code)
+	cntxt.errorHandler(res, req, err, code)
 }
 
 // requestContext.Set() allows you to save a value for the current request.
@@ -350,4 +350,12 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 	}
 	regexpPath = "^" + strings.Join(items, `\/`) + "$"
 	return
+}
+
+// An implementation of an errorHandler so we have one if a custom one
+// is not explicitly set.
+//
+// Note: the request is passed so we can always very our response depending on the request info.
+func defaultErrorHandler(res http.ResponseWriter, req *http.Request, err string, code int) {
+	http.Error(res, err, code)
 }

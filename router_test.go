@@ -700,7 +700,7 @@ func TestErrorHandler(t *testing.T) {
 	aRouter := NewRouter()
 
 	indexReqHandler := func(res http.ResponseWriter, req *http.Request) {
-		Context(req).Error(res, "error in indexReqHandler", 500)
+		Context(req).Error(res, req, "error in indexReqHandler", 500)
 		Context(req).Next(res, req)
 	}
 
@@ -729,7 +729,7 @@ func TestErrorHandler(t *testing.T) {
 	}
 
 	// Test custom ErrorHandler
-	aRouter.ErrorHandler = func(res http.ResponseWriter, err string, code int) {
+	aRouter.ErrorHandler = func(res http.ResponseWriter, req *http.Request, err string, code int) {
 		http.Error(res, strings.ToUpper(err), code)
 	}
 
@@ -761,7 +761,7 @@ func TestErrorHandler(t *testing.T) {
 	secondHandler := func(res http.ResponseWriter, req *http.Request) {
 		secondHandlerBeforeNextBeforeError = true
 		if shouldError {
-			Context(req).Error(res, "error in secondHandler", 400)
+			Context(req).Error(res, req, "error in secondHandler", 400)
 		}
 		secondHandlerBeforeNextAfterError = true
 		Context(req).Next(res, req)
@@ -819,7 +819,7 @@ func TestErrorHandler(t *testing.T) {
 	secondHandler = func(res http.ResponseWriter, req *http.Request) {
 		secondHandlerBeforeNextBeforeError = true
 		if shouldError {
-			Context(req).Error(res, "error in secondHandler", 501)
+			Context(req).Error(res, req, "error in secondHandler", 501)
 			return
 		}
 		secondHandlerBeforeNextAfterError = true
