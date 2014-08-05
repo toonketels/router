@@ -13,6 +13,8 @@ Ideas considered (heavily borrowing from express/connect):
   - set a generic pageNotFound handlerFunc
   - use regular `http.HandlerFunc` to be compatible with existing code and go in general
 
+[![Build Status](https://drone.io/github.com/toonketels/router/status.png)](https://drone.io/github.com/toonketels/router/latest)
+
 Quickstart
 ---------------------------
 
