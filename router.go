@@ -24,8 +24,8 @@ var requestContextStore = make(map[*http.Request]*RequestContext)
 type Router struct {
 	routes          map[string][]*requestHandler
 	middleware      []middlewareRequestHandler
-	NotFoundHandler http.HandlerFunc                                                       // Specify a custom NotFoundHandler
-	ErrorHandler    func(res http.ResponseWriter, req *http.Request, err string, code int) // Specify a custom ErrorHandler
+	NotFoundHandler http.HandlerFunc // Specify a custom NotFoundHandler
+	ErrorHandler    ErrorHandler     // Specify a custom ErrorHandler
 }
 
 // NewRouter creates a router and returns a pointer to it so
@@ -206,7 +206,7 @@ type RequestContext struct {
 	inError        bool
 	handlers       []http.HandlerFunc
 	currentHandler int
-	errorHandler   func(res http.ResponseWriter, req *http.Request, err string, code int)
+	errorHandler   ErrorHandler
 	store          map[interface{}]interface{}
 }
 
@@ -365,6 +365,13 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 	regexpPath = "^" + strings.Join(items, `\/`) + "$"
 	return
 }
+
+// ErrorHandler interface to which an errorHandler needs to comply.
+//
+// Used as a field in the router to override the default errorHandler implementation.
+// Its responsibility is to generate the http Resonse when an error occurs. That is,
+// when requestContext.Error() gets called.
+type ErrorHandler func(res http.ResponseWriter, req *http.Request, err string, code int)
 
 // An implementation of an errorHandler so we have one if a custom one
 // is not explicitly set.

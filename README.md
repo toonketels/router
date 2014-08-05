@@ -262,7 +262,7 @@ func logger(res http.ResponseWriter, req *http.Request) {
 
 The actual response send to the client is handled by default ErrorRequestHandler. Which will just do `http.Error(res, err, code)`.
 
-Customise the response by updating your router's `ErrorHandler`.
+Customise the response by updating your router's `ErrorHandler`. The function passed should comply with the `ErrorHandler` interface.
 
 ~~~ go
 appRouter.ErrorHandler = func(res http.ResponseWriter, req *http.Request, err string, code int) {
