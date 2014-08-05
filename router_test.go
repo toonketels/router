@@ -457,21 +457,22 @@ func TestMount(t *testing.T) {
 
 	aRouter.Mount("/", firstMReqHandler)
 	if len(aRouter.middleware) != 1 ||
-		reflect.ValueOf(aRouter.middleware[0].Handle).Pointer() != reflect.ValueOf(firstMReqHandler).Pointer() ||
+		// We need to convert firstHandler's type to a http.HandlerFunc before comparison...
+		reflect.ValueOf(aRouter.middleware[0].Handle) != reflect.ValueOf(http.HandlerFunc(firstMReqHandler)) ||
 		aRouter.middleware[0].MountPath != "/" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
 	aRouter.Mount("/api", secondMReqHandler)
 	if len(aRouter.middleware) != 2 ||
-		reflect.ValueOf(aRouter.middleware[1].Handle).Pointer() != reflect.ValueOf(secondMReqHandler).Pointer() ||
+		reflect.ValueOf(aRouter.middleware[1].Handle) != reflect.ValueOf(http.HandlerFunc(secondMReqHandler)) ||
 		aRouter.middleware[1].MountPath != "/api" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
 	aRouter.Mount("/", thirdMReqHandler)
 	if len(aRouter.middleware) != 3 ||
-		reflect.ValueOf(aRouter.middleware[2].Handle).Pointer() != reflect.ValueOf(thirdMReqHandler).Pointer() ||
+		reflect.ValueOf(aRouter.middleware[2].Handle) != reflect.ValueOf(http.HandlerFunc(thirdMReqHandler)) ||
 		aRouter.middleware[2].MountPath != "/" {
 		t.Error("The middleware should have been registered to the router")
 	}
