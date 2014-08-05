@@ -14,7 +14,7 @@ Ideas considered (heavily borrowing from express/connect):
 Basic usage
 
 	// Create a new router
-	appRouter = router.newRouter()
+	appRouter := router.NewRouter()
 
 	// Register a handlerFunc for GET/"hello" paths
 	appRouter.Get("/hello", func(res http.ResponseWriter, req *http.Request) {
