@@ -176,14 +176,14 @@ As you might have noticed, handlers need to be http.HandlerFunc's. So you can us
 
 ### Mounting handlerFuncs
 
-Some handlerFuncs need to be executed for every request, like a logger. Instead of passing it to every registered route, we "mount" them using `router.Use()`.
+Some handlerFuncs need to be executed for every request, like a logger. Instead of passing it to every registered route, we "mount" them using `router.Mount()`.
 
 ~~~ go
 appRouter := router.NewRouter()
 
 // Mount handlerFuncs first
-appRouter.Use("/", logger)
-appRouter.Use("/", allowAccess)
+appRouter.Mount("/", logger)
+appRouter.Mount("/", allowAccess)
 
 // Then start matching paths
 appRouter.Get("/user/:userid/hello", loadUser, handleUser)
@@ -197,8 +197,8 @@ By changing the mountPath of allowAccess to `/admin`, we get different results.
 
 ~~~ go
 // Mount handlerFuncs first
-appRouter.Use("/", logger)
-appRouter.Use("/admin", allowAccess)
+appRouter.Mount("/", logger)
+appRouter.Mount("/admin", allowAccess)
 
 // Then start matching paths
 appRouter.Get("/user/:userid/hello", loadUser, handleUser)

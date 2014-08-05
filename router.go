@@ -93,9 +93,9 @@ func (router *Router) Head(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("HEAD", path, handlers...)
 }
 
-// Use registers a middleware requestHandler which will be evaluated on each
+// Mount registers a middleware requestHandler which will be evaluated on each
 // path corresponding to the mountPath.
-func (router *Router) Use(mountPath string, handler http.HandlerFunc) {
+func (router *Router) Mount(mountPath string, handler http.HandlerFunc) {
 	mReqHandler := middlewareRequestHandler{
 		MountPath: mountPath,
 		Handle:    handler,

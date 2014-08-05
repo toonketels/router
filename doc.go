@@ -32,9 +32,9 @@ More advanced usage
 	func main() {
 		appRouter := router.NewRouter()
 
-		// `Use` mounts a handler for all paths (starting with `/`)
+		// `Mount` mounts a handler for all paths (starting with `/`)
 		// Always mount generic handlerFuncs first.
-		appRouter.Use("/", logger)
+		appRouter.Mount("/", logger)
 
 		// We can use multiple handleFuncs evaluated in order.
 		// `:userid` specifies the param `userid` so it will match any string.

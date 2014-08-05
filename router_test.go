@@ -434,7 +434,7 @@ func TestOptions(t *testing.T) {
 }
 
 // Tests registration of middlewareHandlers
-func TestUse(t *testing.T) {
+func TestMount(t *testing.T) {
 	aRouter := NewRouter()
 
 	firstMReqHandler := func(res http.ResponseWriter, req *http.Request) {
@@ -455,21 +455,21 @@ func TestUse(t *testing.T) {
 		t.Error("A new router should not have middleware, we got ", len(aRouter.middleware))
 	}
 
-	aRouter.Use("/", firstMReqHandler)
+	aRouter.Mount("/", firstMReqHandler)
 	if len(aRouter.middleware) != 1 ||
 		reflect.ValueOf(aRouter.middleware[0].Handle).Pointer() != reflect.ValueOf(firstMReqHandler).Pointer() ||
 		aRouter.middleware[0].MountPath != "/" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
-	aRouter.Use("/api", secondMReqHandler)
+	aRouter.Mount("/api", secondMReqHandler)
 	if len(aRouter.middleware) != 2 ||
 		reflect.ValueOf(aRouter.middleware[1].Handle).Pointer() != reflect.ValueOf(secondMReqHandler).Pointer() ||
 		aRouter.middleware[1].MountPath != "/api" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
-	aRouter.Use("/", thirdMReqHandler)
+	aRouter.Mount("/", thirdMReqHandler)
 	if len(aRouter.middleware) != 3 ||
 		reflect.ValueOf(aRouter.middleware[2].Handle).Pointer() != reflect.ValueOf(thirdMReqHandler).Pointer() ||
 		aRouter.middleware[2].MountPath != "/" {
@@ -751,8 +751,8 @@ func TestMiddleware(t *testing.T) {
 	}
 
 	// Register middleware
-	aRouter.Use("/", indexReqHandler)
-	aRouter.Use("/api", apiReqHandler)
+	aRouter.Mount("/", indexReqHandler)
+	aRouter.Mount("/api", apiReqHandler)
 
 	// Register routes
 	aRouter.Get("/", secondHandler, thirdHandler)
@@ -794,7 +794,7 @@ func TestErrorHandler(t *testing.T) {
 	}
 
 	// Register middleware
-	aRouter.Use("/", indexReqHandler)
+	aRouter.Mount("/", indexReqHandler)
 
 	// Register routes
 	aRouter.Get("/", firstHandler)
@@ -858,7 +858,7 @@ func TestErrorHandler(t *testing.T) {
 	}
 
 	// Register middleware
-	aRouter.Use("/", indexReqHandler)
+	aRouter.Mount("/", indexReqHandler)
 
 	// Register routes
 	aRouter.Get("/", secondHandler, thirdHandler)
@@ -912,7 +912,7 @@ func TestErrorHandler(t *testing.T) {
 	}
 
 	// Register middleware
-	aRouter.Use("/", indexReqHandler)
+	aRouter.Mount("/", indexReqHandler)
 
 	// Register routes
 	aRouter.Get("/", secondHandler, thirdHandler)
