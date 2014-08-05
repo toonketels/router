@@ -13,8 +13,7 @@ Ideas considered (heavily borrowing from express/connect):
   - set a generic pageNotFound handlerFunc
   - use regular `http.HandlerFunc` to be compatible with existing code and go in general
 
-
-Getting started
+Quickstart
 ---------------------------
 
 After installing Go and setting up your [GOPATH](http://golang.org/doc/code.html#GOPATH), create a `server.go` file.
@@ -55,7 +54,23 @@ go run server.go
 ~~~
 
 
-### handlerFuncs
+Next
+-------------------------------
+
+Take a look at the examples in the repo or run and inspect the tests.
+
+The guide below goes a bit deeper into the api. And don't forget `godoc` for api documentation.
+
+Guide
+-------------------------------
+
+### Table of contents
+* [HandlerFuncs](#handlerfuncs)
+* [Mounting handlerFuncs](#mounting-handlerfuncs)
+* [Error Handling](#error-handling)
+
+
+### HandlerFuncs
 
 Once a router instance has been created, use it's `Get/Put/Post/Patch/Head/Options/Delete` methods to register a handlerFunc to a route/HTTP verb pair.
 
@@ -193,3 +208,66 @@ appRouter.Get("/admin/user/:userid", loadUser, administerUserHandler)
 It the above case a request to `/user/20/hello` will execute `logger -> loadUser -> handleUser`, while a request to `/admin/user/20` executes `logger -> allowAccess -> loadUser -> administerUserHandler`.
 
 We see that by dividing a complex handlerFunc into multiple smaller ones, we get more code reuse. It becomes easy to create a small set of "middleware" handlers to be reused on different routes. While the last handlerFunc is generally the one responsible for generating the actual response.
+
+### Error Handling
+
+Besides storing data and dispatching the next handlerFunc cntxt has an `Error` method. Let's update the `loadUser` handlerFunc to take errors into account.
+
+~~~ go
+func loadUser(res http.ResponseWriter, req *http.Request) {
+	cntxt := router.Context(req)
+	user, err := getUserFromDB(cntxt.Params["userid"])
+	if err != nil {
+
+		// Let the errorHandlerFunc generate the error response.
+		// We stop executing the following handlers
+		cntxt.Error(res, req, err.Error(), 500)
+		return
+	}
+
+	// Store the value in request specific store
+	_ = cntxt.Set("user", user)
+
+	// Pass over control to next handlerFunc
+	cntxt.Next(res, req)
+}
+~~~
+
+Calling `cntxt.Error()` notifies the requestContext an error has been made and further `Next()` call will be prevented. It delegates the requestHandling to a dedicated `errorHandlerFunc` to reply in a consistent manner. 
+
+Though calling `Next()` after an error will never dispatch the next HandlerFunc, it is wise to just return after the error so the current
+HandlerFunc stops executing.
+
+Previous HandlerFuncs are allowed to continue executing their code when the executing flow returns to them.
+
+For instance, when the logger below is called, it records the time and calls the next HandlerFunc. If that handler errs, logger will resume as usual allowing it to log its output. 
+
+~~~ go
+func logger(res http.ResponseWriter, req *http.Request) {
+
+	// The fist handlerFunc to be executed
+	// record the time when the request started
+	start := time.Now()
+
+	// Handle over control to the next handlerFunc.
+	router.Context(req).Next(res, req)
+
+	// We log once all other handlerFuncs are done executing
+	// so it needs to come after our call to cntxt.Next()
+	fmt.Println(req.Method, req.URL.Path, time.Now().Sub(start))
+}
+~~~ 
+
+The actual response send to the client is handled by default ErrorRequestHandler. Which will just do `http.Error(res, err, code)`.
+
+Customise the response by updating your router's `ErrorHandler`.
+
+~~~ go
+appRouter.ErrorHandler = func(res http.ResponseWriter, req *http.Request, err string, code int) {
+	http.Error(res, strings.ToUpper(err), code)
+}
+~~~
+
+The request is passed to allow a different response to be send depending on request properties.
+
+Similarly, configure the response generated when a route is not found by updating the router's `NotFoundHandler` which is a plain http.HandlerFunc.
