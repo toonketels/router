@@ -476,6 +476,44 @@ func TestContextGet(t *testing.T) {
 	}
 }
 
+func TestContextStoreDelete(t *testing.T) {
+	cntxt := new(RequestContext)
+	_ = cntxt.Set("one", 1)
+	_ = cntxt.Set(4, "four")
+
+	if len(cntxt.store) != 2 {
+		t.Error("Values should be stored")
+	}
+
+	cntxt.Delete("one")
+	if val, ok := cntxt.Get("one"); val != nil ||
+		ok != false ||
+		len(cntxt.store) != 1 {
+		t.Error("Delete should delete a key value from the store")
+	}
+
+	if val, ok := cntxt.Get(4); ok != true ||
+		val != "four" {
+		t.Error("Key 4 should still exist")
+	}
+
+	cntxt.Delete(4)
+	if val, ok := cntxt.Get(4); val != nil ||
+		ok != false ||
+		len(cntxt.store) != 0 {
+		t.Error("Delete should delete a key value from the store")
+	}
+
+	if ok := cntxt.Set(4, "othervalue"); ok != true ||
+		len(cntxt.store) != 1 {
+		t.Error("We should be able to use the key again")
+	}
+	if val, ok := cntxt.Get(4); ok != true ||
+		val != "othervalue" {
+		t.Error("The new value should be stored")
+	}
+}
+
 // End-to-end ish
 // --------------------------------
 

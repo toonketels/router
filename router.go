@@ -262,6 +262,13 @@ func (cntxt *RequestContext) Get(key interface{}) (val interface{}, ok bool) {
 	return
 }
 
+// requestContext.Delete() allows to delele key value pairs from the store.
+func (cntxt *RequestContext) Delete(key interface{}) {
+	// Lazely create the store
+	cntxt.makeStoreIfNotExist()
+	delete(cntxt.store, key)
+}
+
 // Lazely creates the store if it does not yet exist
 func (cntxt *RequestContext) makeStoreIfNotExist() {
 	if cntxt.store == nil {
