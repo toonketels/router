@@ -36,7 +36,8 @@ More advanced usage
 		// Always mount generic handlerFuncs first.
 		appRouter.Use("/", logger)
 
-		// We can use multiple handleFuncs evaluated in order
+		// We can use multiple handleFuncs evaluated in order.
+		// `:userid` specifies the param `userid` so it will match any string.
 		appRouter.Get("/user/:userid/hello", loadUser, handleUser)
 
 		appRouter.Handle("/")

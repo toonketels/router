@@ -37,10 +37,13 @@ func NewRouter() (router *Router) {
 	router = new(Router)
 
 	router.routes = map[string][]*requestHandler{
-		"GET":    make([]*requestHandler, 0),
-		"POST":   make([]*requestHandler, 0),
-		"PUT":    make([]*requestHandler, 0),
-		"DELETE": make([]*requestHandler, 0),
+		"GET":     make([]*requestHandler, 0),
+		"POST":    make([]*requestHandler, 0),
+		"PUT":     make([]*requestHandler, 0),
+		"DELETE":  make([]*requestHandler, 0),
+		"PATCH":   make([]*requestHandler, 0),
+		"OPTIONS": make([]*requestHandler, 0),
+		"HEAD":    make([]*requestHandler, 0),
 	}
 
 	// Ensure we have an error handler set
@@ -70,6 +73,24 @@ func (router *Router) Put(path string, handlers ...http.HandlerFunc) {
 // will be evaluated in order (after the more generic mounted handlerFuncs).
 func (router *Router) Delete(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("DELETE", path, handlers...)
+}
+
+// Register a PATCH path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted handlerFuncs).
+func (router *Router) Patch(path string, handlers ...http.HandlerFunc) {
+	router.registerRequestHandler("PATCH", path, handlers...)
+}
+
+// Register a OPTONS path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted handlerFuncs).
+func (router *Router) Options(path string, handlers ...http.HandlerFunc) {
+	router.registerRequestHandler("OPTIONS", path, handlers...)
+}
+
+// Register a HEAD path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted handlerFuncs).
+func (router *Router) Head(path string, handlers ...http.HandlerFunc) {
+	router.registerRequestHandler("HEAD", path, handlers...)
 }
 
 // Use registers a middleware requestHandler which will be evaluated on each
@@ -255,7 +276,7 @@ func (cntxt *RequestContext) Get(key interface{}) (val interface{}, ok bool) {
 	return
 }
 
-// requestContext.Delete() allows to delele key value pairs from the store.
+// requestContext.Delete() allows to delete key value pairs from the store.
 func (cntxt *RequestContext) Delete(key interface{}) {
 	// Lazely create the store
 	cntxt.makeStoreIfNotExist()

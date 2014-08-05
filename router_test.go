@@ -349,6 +349,90 @@ func TestDelete(t *testing.T) {
 	}
 }
 
+func TestPatch(t *testing.T) {
+	router := NewRouter()
+
+	// Should not have ony get handlers
+	// There should be no handlers registered
+	if len(router.routes["PATCH"]) > 0 {
+		t.Error("No PATCH handlers should be registered yet")
+	}
+
+	handler := func(res http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.Patch("/hello", handler)
+
+	if reqHandler := router.routes["PATCH"][0]; len(router.routes["PATCH"]) != 1 ||
+		reqHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.Patch("/hello/world", handler)
+
+	if reqHandler := router.routes["PATCH"][1]; len(router.routes["PATCH"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
+		t.Error("Expected a second request handler to be registered")
+	}
+}
+
+func TestHead(t *testing.T) {
+	router := NewRouter()
+
+	// Should not have ony get handlers
+	// There should be no handlers registered
+	if len(router.routes["HEAD"]) > 0 {
+		t.Error("No HEAD handlers should be registered yet")
+	}
+
+	handler := func(res http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.Head("/hello", handler)
+
+	if reqHandler := router.routes["HEAD"][0]; len(router.routes["HEAD"]) != 1 ||
+		reqHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.Head("/hello/world", handler)
+
+	if reqHandler := router.routes["HEAD"][1]; len(router.routes["HEAD"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
+		t.Error("Expected a second request handler to be registered")
+	}
+}
+
+func TestOptions(t *testing.T) {
+	router := NewRouter()
+
+	// Should not have ony get handlers
+	// There should be no handlers registered
+	if len(router.routes["OPTIONS"]) > 0 {
+		t.Error("No OPTIONS handlers should be registered yet")
+	}
+
+	handler := func(res http.ResponseWriter, req *http.Request) {}
+
+	// Add one
+	router.Options("/hello", handler)
+
+	if reqHandler := router.routes["OPTIONS"][0]; len(router.routes["OPTIONS"]) != 1 ||
+		reqHandler.Path != "/hello" {
+		t.Error("Expected a first request handler to be registered")
+	}
+
+	// Add one more
+	router.Options("/hello/world", handler)
+
+	if reqHandler := router.routes["OPTIONS"][1]; len(router.routes["OPTIONS"]) != 2 ||
+		reqHandler.Path != "/hello/world" {
+		t.Error("Expected a second request handler to be registered")
+	}
+}
+
 // Tests registration of middlewareHandlers
 func TestUse(t *testing.T) {
 	aRouter := NewRouter()
