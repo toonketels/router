@@ -240,7 +240,6 @@ func TestRegisterRequestHandler(t *testing.T) {
 func TestGet(t *testing.T) {
 	router := NewRouter()
 
-	// Should not have ony get handlers
 	// There should be no handlers registered
 	if len(router.routes["GET"]) > 0 {
 		t.Error("No GET handlers should be registered yet")
@@ -268,7 +267,6 @@ func TestGet(t *testing.T) {
 func TestPost(t *testing.T) {
 	router := NewRouter()
 
-	// Should not have ony get handlers
 	// There should be no handlers registered
 	if len(router.routes["POST"]) > 0 {
 		t.Error("No POST handlers should be registered yet")
@@ -296,7 +294,6 @@ func TestPost(t *testing.T) {
 func TestPut(t *testing.T) {
 	router := NewRouter()
 
-	// Should not have ony get handlers
 	// There should be no handlers registered
 	if len(router.routes["PUT"]) > 0 {
 		t.Error("No PUT handlers should be registered yet")
@@ -324,7 +321,6 @@ func TestPut(t *testing.T) {
 func TestDelete(t *testing.T) {
 	router := NewRouter()
 
-	// Should not have ony get handlers
 	// There should be no handlers registered
 	if len(router.routes["DELETE"]) > 0 {
 		t.Error("No DELETE handlers should be registered yet")
@@ -352,7 +348,6 @@ func TestDelete(t *testing.T) {
 func TestPatch(t *testing.T) {
 	router := NewRouter()
 
-	// Should not have ony get handlers
 	// There should be no handlers registered
 	if len(router.routes["PATCH"]) > 0 {
 		t.Error("No PATCH handlers should be registered yet")
@@ -380,7 +375,6 @@ func TestPatch(t *testing.T) {
 func TestHead(t *testing.T) {
 	router := NewRouter()
 
-	// Should not have ony get handlers
 	// There should be no handlers registered
 	if len(router.routes["HEAD"]) > 0 {
 		t.Error("No HEAD handlers should be registered yet")
@@ -408,7 +402,6 @@ func TestHead(t *testing.T) {
 func TestOptions(t *testing.T) {
 	router := NewRouter()
 
-	// Should not have ony get handlers
 	// There should be no handlers registered
 	if len(router.routes["OPTIONS"]) > 0 {
 		t.Error("No OPTIONS handlers should be registered yet")
@@ -510,7 +503,7 @@ func TestSet(t *testing.T) {
 	}
 	if len(cntxt.store) != 2 ||
 		cntxt.store[4] != "four" {
-		t.Error("Set should not allow existing keys to be overriden")
+		t.Error("Set should not allow existing keys to be overridden")
 	}
 }
 
@@ -537,7 +530,7 @@ func TestForceSet(t *testing.T) {
 	cntxt.ForceSet(4, "five")
 	if len(cntxt.store) != 2 ||
 		cntxt.store[4] != "five" {
-		t.Error("ForceSet should allow existing keys to be overriden")
+		t.Error("ForceSet should allow existing keys to be overridden")
 	}
 }
 
@@ -602,7 +595,7 @@ func TestContextStoreDelete(t *testing.T) {
 // End-to-end ish
 // --------------------------------
 
-// Test if the correct handlerfuncs are dispatched for each registered path.
+// Test if the correct HandlerFuncs are dispatched for each registered path.
 func TestServeHTTP(t *testing.T) {
 	router := NewRouter()
 
@@ -667,8 +660,7 @@ func TestServeHTTP(t *testing.T) {
 	}
 }
 
-// Test if we can pass multipel handlerFuncs for a given path
-// This test is going to be more end-to-end ish
+// Test if we can pass multiple handlerFuncs for a given path
 func TestRegisterMultiple(t *testing.T) {
 	router := NewRouter()
 
@@ -827,7 +819,7 @@ func TestErrorHandler(t *testing.T) {
 		t.Error("Expected 'ERROR IN INDEXREQHANDLER' as response but got ", string(body))
 	}
 
-	// Another testcase, indexReqHandler works
+	// Another test case, indexReqHandler works
 	aRouter = NewRouter()
 	indexHandlerBeforeNext := false
 	indexHandlerAfterNext := false

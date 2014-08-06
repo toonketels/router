@@ -41,7 +41,7 @@ func logger(res http.ResponseWriter, req *http.Request) {
 
 	// Grab the current context and call
 	// cntxt.Next() to handle over control to the next handlerFunc.
-	// Simply dont call cntxt.Next() if you dont want to call the following
+	// Simply don't call cntxt.Next() if you don't want to call the following
 	// handlerFunc's (for instance, for access control reasons).
 	router.Context(req).Next(res, req)
 
@@ -83,7 +83,7 @@ func handleUser(res http.ResponseWriter, req *http.Request) {
 	}
 	res.Write([]byte("Who are you?"))
 
-	// We dont use cntxt.Next() as there are no more
+	// We don't use cntxt.Next() as there are no more
 	// handlerFuncs to call. However, stuff wont explode
 	// if you call cntxt.Next()` by mistake.
 }

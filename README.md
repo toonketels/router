@@ -1,17 +1,17 @@
 Router
 ===========================
 
-A go (golang) package to route requests to requesthandlers.
+Package router provides a simple yet powerful URL router and HandlerFunc dispatcher for web apps.
 
 Ideas considered (heavily borrowing from express/connect):
-  - make it easy to register handlers based on HTTP verb/path combos, as this is most often used
-  - complex handlerFuncs should be split up into multiple, so some can be shared between paths
-  - make it easy to `mount` generic handlerFuncs which should be executed on every path
-  - a path often consists of a params like userid, make it easy to register such a path and access the params by name
-  - store data on a requestContext, so it can be passed to later handlerFuncs
+  - registering handlers based on HTTP verb/path combos should be easy, as this is most often used
+  - split complex HandlerFuncs into multiple smaller one which can be shared
+  - mount generic HandlerFuncs to be executed on every path
+  - registering and accessing paths with params (like :userid) should be easy
+  - store data on a requestContext, so it can be passed to later HandlerFuncs
   - set a generic errorHandlerFunc and stop executing later handerFuncs as soon as an error occurs
-  - set a generic pageNotFound handlerFunc
-  - use regular `http.HandlerFunc` to be compatible with existing code and go in general
+  - set a generic pageNotFound HandlerFunc
+  - handlers are regular `http.HandlerFunc` to be compatible with go
 
 [![Build Status](https://drone.io/github.com/toonketels/router/status.png)](https://drone.io/github.com/toonketels/router/latest)
 
@@ -262,7 +262,7 @@ func logger(res http.ResponseWriter, req *http.Request) {
 
 The actual response send to the client is handled by default ErrorRequestHandler. Which will just do `http.Error(res, err, code)`.
 
-Customise the response by updating your router's `ErrorHandler`. The function passed should comply with the `ErrorHandler` interface.
+Customize the response by updating your router's `ErrorHandler`. The function passed should comply with the `ErrorHandler` interface.
 
 ~~~ go
 appRouter.ErrorHandler = func(res http.ResponseWriter, req *http.Request, err string, code int) {

@@ -9,7 +9,7 @@ import (
 // Stores
 // ----------------------
 
-// Store to keep track of the requestContext
+// Store to keep track of the current requestContexts in use.
 var requestContextStore = make(map[*http.Request]*RequestContext)
 
 // Router
@@ -22,16 +22,16 @@ var requestContextStore = make(map[*http.Request]*RequestContext)
 // There can be multiple per application, if so, don't forget to pass a
 // different pattern to `router.Handle()`.
 type Router struct {
-	routes          map[string][]*requestHandler
-	middleware      []middlewareRequestHandler
 	NotFoundHandler http.HandlerFunc // Specify a custom NotFoundHandler
 	ErrorHandler    ErrorHandler     // Specify a custom ErrorHandler
+	routes          map[string][]*requestHandler
+	middleware      []middlewareRequestHandler
 }
 
 // NewRouter creates a router and returns a pointer to it so
 // you can start registering routes.
 //
-// Dont forget to call `router.Handle(pattern)` to actually use
+// Don't forget to call `router.Handle(pattern)` to actually use
 // the router.
 func NewRouter() (router *Router) {
 	router = new(Router)
@@ -51,49 +51,49 @@ func NewRouter() (router *Router) {
 	return
 }
 
-// Register a GET path to be handled. Multiple handlers can be passed and
-// will be evaluated in order (after the more generic mounted handlerFuncs).
+// Get registers a GET path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted HandlerFuncs).
 func (router *Router) Get(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("GET", path, handlers...)
 }
 
-// Register a POST path to be handled. Multiple handlers can be passed and
-// will be evaluated in order (after the more generic mounted handlerFuncs).
+// Post registers a POST path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted HandlerFuncs).
 func (router *Router) Post(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("POST", path, handlers...)
 }
 
-// Register a PUT path to be handled. Multiple handlers can be passed and
-// will be evaluated in order (after the more generic mounted handlerFuncs).
+// Put registers a PUT path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted HandlerFuncs).
 func (router *Router) Put(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("PUT", path, handlers...)
 }
 
-// Register a DELETE path to be handled. Multiple handlers can be passed and
-// will be evaluated in order (after the more generic mounted handlerFuncs).
+// Delete registers a DELETE path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted HandlerFuncs).
 func (router *Router) Delete(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("DELETE", path, handlers...)
 }
 
-// Register a PATCH path to be handled. Multiple handlers can be passed and
-// will be evaluated in order (after the more generic mounted handlerFuncs).
+// Patch registers a PATCH path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted HandlerFuncs).
 func (router *Router) Patch(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("PATCH", path, handlers...)
 }
 
-// Register a OPTONS path to be handled. Multiple handlers can be passed and
-// will be evaluated in order (after the more generic mounted handlerFuncs).
+// Options registers an OPTONS path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted HandlerFuncs).
 func (router *Router) Options(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("OPTIONS", path, handlers...)
 }
 
-// Register a HEAD path to be handled. Multiple handlers can be passed and
-// will be evaluated in order (after the more generic mounted handlerFuncs).
+// Head registers an HEAD path to be handled. Multiple handlers can be passed and
+// will be evaluated in order (after the more generic mounted HandlerFuncs).
 func (router *Router) Head(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("HEAD", path, handlers...)
 }
 
-// Mount registers a middleware requestHandler which will be evaluated on each
+// Mount registers a "middleware" requestHandler which will be evaluated on each
 // path corresponding to the mountPath.
 func (router *Router) Mount(mountPath string, handler http.HandlerFunc) {
 	mReqHandler := middlewareRequestHandler{
@@ -107,7 +107,7 @@ func (router *Router) Mount(mountPath string, handler http.HandlerFunc) {
 // Handle registers the router for the given pattern in the DefaultServeMux.
 // The documentation for ServeMux explains how patterns are matched.
 //
-// This just delegetes to `http.Handle()` internally.
+// This delegates to `http.Handle()` internally.
 //
 // Most of the times, you just want to do `router.Handle("/")`.
 func (router *Router) Handle(pattern string) {
@@ -133,7 +133,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			cntxt.Params = withParams
 			// Attach the handlers to the context
 			cntxt.handlers = reqHandler.Handlers
-			// Set the errorhandler
+			// Set the ErrorHandler
 			cntxt.errorHandler = router.ErrorHandler
 			// Dispatch the first handler,
 			// the request is being served.
@@ -150,7 +150,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// Helper function to actually register the requestHandler on the router
+// Helper function to actually register the requestHandler on the router.
 func (router *Router) registerRequestHandler(method string, path string, handlers ...http.HandlerFunc) {
 	reqHandler := router.makeRequestHandler(path, handlers...)
 	router.routes[method] = append(router.routes[method], reqHandler)
@@ -173,7 +173,7 @@ func (router *Router) makeRequestHandler(path string, handlers ...http.HandlerFu
 	// followed by our registered handlers... keeping everything in order
 	handlers = append(middleware, handlers...)
 
-	// Build the regex string to match each incoming request against
+	// Build the regexp string to match each incoming request against
 	regexpPath, withParamNames := buildRegexpFor(path)
 
 	reqHandler = &requestHandler{
@@ -205,8 +205,8 @@ func (router *Router) middlewareToMount(path string) (mountedMiddleware []http.H
 // This function builds a string to be compiled as a regexp to match those
 // paths and returns the names of the parameters found in the route.
 func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
+	var items []string
 	parts := strings.Split(path, "/")
-	items := make([]string, 0)
 	withParamNames = make([]string, 0)
 	for _, part := range parts {
 		if strings.HasPrefix(part, ":") {
@@ -223,15 +223,15 @@ func buildRegexpFor(path string) (regexpPath string, withParamNames []string) {
 
 // ErrorHandler interface to which an errorHandler needs to comply.
 //
-// Used as a field in the router to override the default errorHandler implementation.
-// Its responsibility is to generate the http Resonse when an error occurs. That is,
+// Used as a field in the router to override the default RrrorHandler implementation.
+// Its responsibility is to generate the http Response when an error occurs. That is,
 // when requestContext.Error() gets called.
 type ErrorHandler func(res http.ResponseWriter, req *http.Request, err string, code int)
 
-// An implementation of an errorHandler so we have one if a custom one
+// An implementation of an ErrorHandler so we have one if a custom one
 // is not explicitly set.
 //
-// Note: the request is passed so we can always very our response depending on the request info.
+// Note: the request is passed so we can always vary our response depending on the request info.
 func defaultErrorHandler(res http.ResponseWriter, req *http.Request, err string, code int) {
 	http.Error(res, err, code)
 }
