@@ -14,6 +14,8 @@ Ideas considered (heavily borrowing from express/connect):
   - handlers are regular `http.HandlerFunc` to be compatible with go
 
 [![Build Status](https://drone.io/github.com/toonketels/router/status.png)](https://drone.io/github.com/toonketels/router/latest)
+[![GoDoc](https://godoc.org/github.com/toonketels/router?status.svg)](https://godoc.org/github.com/toonketels/router)
+
 
 Quickstart
 ---------------------------
