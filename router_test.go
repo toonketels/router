@@ -426,7 +426,7 @@ func TestOptions(t *testing.T) {
 	}
 }
 
-// Tests registration of middlewareHandlers
+// Tests mounting of requestHandlers
 func TestMount(t *testing.T) {
 	aRouter := NewRouter()
 
@@ -444,29 +444,29 @@ func TestMount(t *testing.T) {
 		res.Write([]byte("third"))
 	}
 
-	if len(aRouter.middleware) != 0 {
-		t.Error("A new router should not have middleware, we got ", len(aRouter.middleware))
+	if len(aRouter.mounted) != 0 {
+		t.Error("A new router should not have middleware, we got ", len(aRouter.mounted))
 	}
 
 	aRouter.Mount("/", firstMReqHandler)
-	if len(aRouter.middleware) != 1 ||
+	if len(aRouter.mounted) != 1 ||
 		// We need to convert firstHandler's type to a http.HandlerFunc before comparison...
-		reflect.ValueOf(aRouter.middleware[0].Handle) != reflect.ValueOf(http.HandlerFunc(firstMReqHandler)) ||
-		aRouter.middleware[0].MountPath != "/" {
+		reflect.ValueOf(aRouter.mounted[0].Handle) != reflect.ValueOf(http.HandlerFunc(firstMReqHandler)) ||
+		aRouter.mounted[0].MountPath != "/" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
 	aRouter.Mount("/api", secondMReqHandler)
-	if len(aRouter.middleware) != 2 ||
-		reflect.ValueOf(aRouter.middleware[1].Handle) != reflect.ValueOf(http.HandlerFunc(secondMReqHandler)) ||
-		aRouter.middleware[1].MountPath != "/api" {
+	if len(aRouter.mounted) != 2 ||
+		reflect.ValueOf(aRouter.mounted[1].Handle) != reflect.ValueOf(http.HandlerFunc(secondMReqHandler)) ||
+		aRouter.mounted[1].MountPath != "/api" {
 		t.Error("The middleware should have been registered to the router")
 	}
 
 	aRouter.Mount("/", thirdMReqHandler)
-	if len(aRouter.middleware) != 3 ||
-		reflect.ValueOf(aRouter.middleware[2].Handle) != reflect.ValueOf(http.HandlerFunc(thirdMReqHandler)) ||
-		aRouter.middleware[2].MountPath != "/" {
+	if len(aRouter.mounted) != 3 ||
+		reflect.ValueOf(aRouter.mounted[2].Handle) != reflect.ValueOf(http.HandlerFunc(thirdMReqHandler)) ||
+		aRouter.mounted[2].MountPath != "/" {
 		t.Error("The middleware should have been registered to the router")
 	}
 }
@@ -715,8 +715,8 @@ func TestRegisterMultiple(t *testing.T) {
 	}
 }
 
-// Test mounting and dispatching middleware
-func TestMiddleware(t *testing.T) {
+// Test mounting and dispatching mountedRequestHandlers
+func TestDispatchingMountedRequestHandlers(t *testing.T) {
 	aRouter := NewRouter()
 
 	indexReqHandler := func(res http.ResponseWriter, req *http.Request) {
@@ -743,7 +743,7 @@ func TestMiddleware(t *testing.T) {
 		res.Write([]byte("third"))
 	}
 
-	// Register middleware
+	// Mount handlers
 	aRouter.Mount("/", indexReqHandler)
 	aRouter.Mount("/api", apiReqHandler)
 
@@ -786,7 +786,6 @@ func TestErrorHandler(t *testing.T) {
 		Context(req).Next(res, req)
 	}
 
-	// Register middleware
 	aRouter.Mount("/", indexReqHandler)
 
 	// Register routes
@@ -850,10 +849,7 @@ func TestErrorHandler(t *testing.T) {
 		res.Write([]byte("third"))
 	}
 
-	// Register middleware
 	aRouter.Mount("/", indexReqHandler)
-
-	// Register routes
 	aRouter.Get("/", secondHandler, thirdHandler)
 
 	server = httptest.NewServer(aRouter)
@@ -904,10 +900,7 @@ func TestErrorHandler(t *testing.T) {
 		secondHandlerAfterNext = true
 	}
 
-	// Register middleware
 	aRouter.Mount("/", indexReqHandler)
-
-	// Register routes
 	aRouter.Get("/", secondHandler, thirdHandler)
 
 	server = httptest.NewServer(aRouter)

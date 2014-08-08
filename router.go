@@ -25,7 +25,7 @@ type Router struct {
 	NotFoundHandler http.HandlerFunc // Specify a custom NotFoundHandler
 	ErrorHandler    ErrorHandler     // Specify a custom ErrorHandler
 	routes          map[string][]*requestHandler
-	middleware      []middlewareRequestHandler
+	mounted         []mountedRequestHandler
 }
 
 // NewRouter creates a router and returns a pointer to it so
@@ -93,15 +93,28 @@ func (router *Router) Head(path string, handlers ...http.HandlerFunc) {
 	router.registerRequestHandler("HEAD", path, handlers...)
 }
 
-// Mount registers a "middleware" requestHandler which will be evaluated on each
-// path corresponding to the mountPath.
+// Mount mounts a requestHandler for a given mountPath. The requestHandler
+// will be executed on all paths which start like the mountPath.
+//
+// For example: mountPath "/" will execute the requestHandler for all requests
+// (each one starts with "/"), contrary to "/api" will only execute the
+// handler on paths starting with "/api" like "/api", "/api/2", "api/users/23"...
+//
+// This allows for the use of general middleware, unlike more specific middleware
+// handlers which are registered on specific paths.
+//
+// Use mount if your requestHandlers needs to be invoked on all/most paths so you
+// don't have to register it again and again when registering handlers.
+//
+// The mountPath don't accept tokens (like :user) but can access the params on
+// the context if the path on which it is fired contains those tokens.
 func (router *Router) Mount(mountPath string, handler http.HandlerFunc) {
-	mReqHandler := middlewareRequestHandler{
+	mReqHandler := mountedRequestHandler{
 		MountPath: mountPath,
 		Handle:    handler,
 		Matcher:   regexp.MustCompile(`^\` + mountPath),
 	}
-	router.middleware = append(router.middleware, mReqHandler)
+	router.mounted = append(router.mounted, mReqHandler)
 }
 
 // Handle registers the router for the given pattern in the DefaultServeMux.
@@ -168,10 +181,10 @@ func (router *Router) notFound(res http.ResponseWriter, req *http.Request) {
 // Creates the requestHandler struct from the given path
 func (router *Router) makeRequestHandler(path string, handlers ...http.HandlerFunc) (reqHandler *requestHandler) {
 	// Mount middleware
-	middleware := router.middlewareToMount(path)
+	handlersToMount := router.handlersToMountFor(path)
 	// Make the mountedMiddleware the first handlers to be called
 	// followed by our registered handlers... keeping everything in order
-	handlers = append(middleware, handlers...)
+	handlers = append(handlersToMount, handlers...)
 
 	// Build the regexp string to match each incoming request against
 	regexpPath, withParamNames := buildRegexpFor(path)
@@ -186,10 +199,10 @@ func (router *Router) makeRequestHandler(path string, handlers ...http.HandlerFu
 	return
 }
 
-// Returns all middlewareRequestHandlers that should be mounted for the given path.
-func (router *Router) middlewareToMount(path string) (mountedMiddleware []http.HandlerFunc) {
+// Returns all mountedRequestHandlers that should be mounted for the given path.
+func (router *Router) handlersToMountFor(path string) (mountedMiddleware []http.HandlerFunc) {
 	mountedMiddleware = make([]http.HandlerFunc, 0)
-	for _, mReqHandler := range router.middleware {
+	for _, mReqHandler := range router.mounted {
 		if mReqHandler.shouldMount(path) {
 			mountedMiddleware = append(mountedMiddleware, mReqHandler.Handle)
 		}

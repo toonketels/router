@@ -46,14 +46,18 @@ func (reqHandler *requestHandler) matches(path string) (isAMatch bool, withParam
 // MiddlewareRequestHandler
 // --------------------------------
 
-// middlewareRequestHandler is similar to requestHandler but is mounted.
-type middlewareRequestHandler struct {
+// mountedRequestHandler is requestHandler which is mounted instead
+// of registered.
+//
+// The fact it has been mounted means it does not need to keep around as
+// much data as the normal requestHandlers.
+type mountedRequestHandler struct {
 	MountPath string
 	Handle    http.HandlerFunc
 	Matcher   *regexp.Regexp
 }
 
-// Checks whether the middlewareRequestHandler matches the given path.
-func (mReqHandler *middlewareRequestHandler) shouldMount(path string) bool {
+// Checks whether the mountedRequestHandler matches the given path.
+func (mReqHandler *mountedRequestHandler) shouldMount(path string) bool {
 	return mReqHandler.Matcher.MatchString(path)
 }
