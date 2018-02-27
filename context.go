@@ -19,7 +19,8 @@ type RequestContext struct {
 
 // Context returns a pointer to the RequestContext for the current request.
 func Context(req *http.Request) *RequestContext {
-	return requestContextStore[req]
+	cntxt, _ := requestContextStore.Load(req)
+	return cntxt.(*RequestContext)
 }
 
 // Next invokes the next HandleFunc in line registered to handle this request.
