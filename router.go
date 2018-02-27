@@ -4,13 +4,14 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // Stores
 // ----------------------
 
 // Store to keep track of the current requestContexts in use.
-var requestContextStore = make(map[*http.Request]*RequestContext)
+var requestContextStore sync.Map // map[*http.Request]*RequestContext
 
 // Router
 // ----------------------
@@ -141,7 +142,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			// Create a RequestContext
 			cntxt := new(RequestContext)
 			// Store the requestContext
-			requestContextStore[req] = cntxt
+			requestContextStore.Store(req, cntxt)
 			// Capture the route params
 			cntxt.Params = withParams
 			// Attach the handlers to the context
@@ -152,7 +153,7 @@ func (router *Router) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			// the request is being served.
 			cntxt.Next(res, req)
 			// Clean up
-			delete(requestContextStore, req)
+			requestContextStore.Delete(req)
 			break
 		}
 	}
