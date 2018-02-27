@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -956,4 +957,25 @@ func isHandlersSliceDeepEqual(first []http.HandlerFunc, second []http.HandlerFun
 		}
 	}
 	return true
+}
+
+func TestContextStoreRace(t *testing.T) {
+	router := NewRouter()
+	handler := func(res http.ResponseWriter, req *http.Request) {}
+	router.Get("/hello/world", handler)
+
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r := httptest.NewRequest("GET", "/hello/world", nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, r)
+		}()
+	}
+	wg.Wait()
 }
