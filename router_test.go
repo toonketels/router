@@ -959,6 +959,23 @@ func isHandlersSliceDeepEqual(first []http.HandlerFunc, second []http.HandlerFun
 	return true
 }
 
+func TestLoadContext(t *testing.T) {
+	router := NewRouter()
+	router.Get("/", func(res http.ResponseWriter, req *http.Request) {
+		if cntxt := Context(req); cntxt == nil {
+			t.Error("Expected non-nil got nil")
+		}
+	})
+	server := httptest.NewServer(router)
+	defer server.Close()
+	r := httptest.NewRequest("GET", "/", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, r)
+	if cntxt := Context(r); cntxt != nil {
+		t.Error("Expected nil got ", *cntxt)
+	}
+}
+
 func TestContextStoreRace(t *testing.T) {
 	router := NewRouter()
 	handler := func(res http.ResponseWriter, req *http.Request) {}
