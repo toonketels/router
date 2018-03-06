@@ -1,6 +1,10 @@
 Router
 ===========================
 
+
+__NOTICE: This project is no longer actively maintained. Please take a look at [lufia's fork](https://github.com/lufia/router) which contains some fixes.__
+
+
 Package router provides a simple yet powerful URL router and HandlerFunc dispatcher for web apps.
 
 Ideas considered (heavily borrowing from express/connect):
@@ -170,7 +174,7 @@ func loadUser(res http.ResponseWriter, req *http.Request) {
 
 	// Grab the userid param from the context
 	userid := router.Context(req).Params["userid"]
-	
+
 	// Do something with it
 }
 ~~~
@@ -237,14 +241,14 @@ func loadUser(res http.ResponseWriter, req *http.Request) {
 }
 ~~~
 
-Calling `cntxt.Error()` notifies the requestContext an error has been made and further `Next()` call will be prevented. It delegates the requestHandling to a dedicated `errorHandlerFunc` to reply in a consistent manner. 
+Calling `cntxt.Error()` notifies the requestContext an error has been made and further `Next()` call will be prevented. It delegates the requestHandling to a dedicated `errorHandlerFunc` to reply in a consistent manner.
 
 Though calling `Next()` after an error will never dispatch the next HandlerFunc, it is wise to just return after the error so the current
 HandlerFunc stops executing.
 
 Previous HandlerFuncs are allowed to continue executing their code when the executing flow returns to them.
 
-For instance, when the logger below is called, it records the time and calls the next HandlerFunc. If that handler errs, logger will resume as usual allowing it to log its output. 
+For instance, when the logger below is called, it records the time and calls the next HandlerFunc. If that handler errs, logger will resume as usual allowing it to log its output.
 
 ~~~ go
 func logger(res http.ResponseWriter, req *http.Request) {
@@ -260,7 +264,7 @@ func logger(res http.ResponseWriter, req *http.Request) {
 	// so it needs to come after our call to cntxt.Next()
 	fmt.Println(req.Method, req.URL.Path, time.Since(start))
 }
-~~~ 
+~~~
 
 The actual response send to the client is handled by default ErrorRequestHandler. Which will just do `http.Error(res, err, code)`.
 
